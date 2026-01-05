@@ -64,11 +64,14 @@ cp .env.example .env
 ### 4. Deploy Your Workflow
 
 ```bash
-# Validate configuration without deploying
-holon deploy holon.yaml --dry-run
+# Validate configuration without deploying (from current directory)
+holon deploy --dry-run
 
-# Deploy to the engine
-holon deploy holon.yaml
+# Deploy to the engine (uses holon.yaml in current directory)
+holon deploy
+
+# Deploy a specific file
+holon deploy --file samples/news/holon.yaml
 ```
 
 ## Commands
@@ -87,15 +90,20 @@ Options:
 
 ### `holon deploy`
 
-Deploy a workflow to the Holon Engine.
+Deploy a workflow to the Holon Engine. By default, deploys `holon.yaml` from the current directory.
 
 ```bash
-holon deploy holon.yaml
+# Deploy holon.yaml from current directory
+holon deploy
+
+# Deploy a specific file
+holon deploy --file samples/news/holon.yaml
 ```
 
 Options:
+- `--file`: Path to holon.yaml configuration file (default: ./holon.yaml)
 - `--name`: Override project name from YAML
-- `--env`: Path to .env file for secrets
+- `--env`: Path to .env file for secrets (default: .env in same directory as holon.yaml)
 - `--dry-run`: Validate without deploying
 
 ### `holon list`

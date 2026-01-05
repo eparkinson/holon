@@ -30,19 +30,19 @@ def test_init_command_creates_files(tmp_path, monkeypatch):
     """Test that init command creates holon.yaml and .env.example."""
     # Change to tmp directory
     monkeypatch.chdir(tmp_path)
-    
+
     result = runner.invoke(app, ["init", "--name", "test-project", "--path", str(tmp_path)])
-    
+
     # Check command succeeded
     assert result.exit_code == 0
-    
+
     # Check files were created
     holon_file = tmp_path / "holon.yaml"
     env_file = tmp_path / ".env.example"
-    
+
     assert holon_file.exists()
     assert env_file.exists()
-    
+
     # Check holon.yaml content
     content = holon_file.read_text()
     assert "test-project" in content
@@ -53,7 +53,8 @@ def test_deploy_command_validation_success(tmp_path):
     """Test that deploy command validates a correct config."""
     # Create a valid holon.yaml
     holon_file = tmp_path / "holon.yaml"
-    holon_file.write_text("""
+    holon_file.write_text(
+        """
 version: "1.0"
 project: "test-project"
 resources:
@@ -66,11 +67,12 @@ workflow:
     - id: step1
       agent: agent1
       instruction: "Do something"
-""")
-    
+"""
+    )
+
     # Run deploy with --dry-run (won't connect to engine)
-    result = runner.invoke(app, ["deploy", str(holon_file), "--dry-run"])
-    
+    result = runner.invoke(app, ["deploy", "--file", str(holon_file), "--dry-run"])
+
     assert result.exit_code == 0
     assert "Configuration validated successfully" in result.stdout
     assert "test-project" in result.stdout
@@ -80,16 +82,62 @@ def test_deploy_command_validation_failure(tmp_path):
     """Test that deploy command catches invalid config."""
     # Create an invalid holon.yaml (missing required fields)
     holon_file = tmp_path / "holon.yaml"
-    holon_file.write_text("""
+    holon_file.write_text(
+        """
 version: "1.0"
 # Missing project, resources, workflow
-""")
-    
+"""
+    )
+
     # Run deploy with --dry-run
-    result = runner.invoke(app, ["deploy", str(holon_file), "--dry-run"])
-    
+    result = runner.invoke(app, ["deploy", "--file", str(holon_file), "--dry-run"])
+
     assert result.exit_code == 1
     assert "validation failed" in result.stdout.lower()
+
+
+def test_deploy_command_default_file(tmp_path, monkeypatch):
+    """Test that deploy command defaults to holon.yaml in current directory."""
+    # Change to tmp directory
+    monkeypatch.chdir(tmp_path)
+
+    # Create holon.yaml in current directory
+    holon_file = tmp_path / "holon.yaml"
+    holon_file.write_text(
+        """
+version: "1.0"
+project: "default-test"
+resources:
+  - id: agent1
+    provider: anthropic
+    model: claude-3-5-sonnet
+workflow:
+  type: sequential
+  steps:
+    - id: step1
+      agent: agent1
+      instruction: "Test"
+"""
+    )
+
+    # Run deploy without specifying file
+    result = runner.invoke(app, ["deploy", "--dry-run"])
+
+    assert result.exit_code == 0
+    assert "Configuration validated successfully" in result.stdout
+    assert "default-test" in result.stdout
+
+
+def test_deploy_command_missing_default_file(tmp_path, monkeypatch):
+    """Test that deploy command fails gracefully when holon.yaml doesn't exist."""
+    # Change to empty tmp directory
+    monkeypatch.chdir(tmp_path)
+
+    # Run deploy without holon.yaml
+    result = runner.invoke(app, ["deploy"])
+
+    assert result.exit_code == 1
+    assert "not found" in result.stdout.lower()
 
 
 def test_config_show_command():
@@ -101,20 +149,22 @@ def test_config_show_command():
 
 def test_config_set_get_commands(tmp_path, monkeypatch):
     """Test setting and getting config values."""
+
     # Mock config directory
     def mock_get_config_dir():
         config_dir = tmp_path / ".holon"
         config_dir.mkdir(exist_ok=True)
         return config_dir
-    
+
     import holon_cli.config
+
     monkeypatch.setattr(holon_cli.config, "get_config_dir", mock_get_config_dir)
-    
+
     # Set a value
     result = runner.invoke(app, ["config", "set", "host", "http://test.example.com"])
     assert result.exit_code == 0
     assert "http://test.example.com" in result.stdout
-    
+
     # Get the value back
     result = runner.invoke(app, ["config", "get", "host"])
     assert result.exit_code == 0
@@ -123,15 +173,17 @@ def test_config_set_get_commands(tmp_path, monkeypatch):
 
 def test_config_set_invalid_key(tmp_path, monkeypatch):
     """Test that setting an invalid config key fails."""
+
     # Mock config directory
     def mock_get_config_dir():
         config_dir = tmp_path / ".holon"
         config_dir.mkdir(exist_ok=True)
         return config_dir
-    
+
     import holon_cli.config
+
     monkeypatch.setattr(holon_cli.config, "get_config_dir", mock_get_config_dir)
-    
+
     result = runner.invoke(app, ["config", "set", "invalid_key", "value"])
     assert result.exit_code == 1
     assert "Unknown configuration key" in result.stdout

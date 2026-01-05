@@ -18,20 +18,22 @@ holon <command> [subcommand] [flags]
 ### 2.1 Deploy
 Deploys a HolonDSL configuration file (`.yaml`) to the backend service. This registers the workflow, initializes the agents, and sets up any defined triggers (cron, webhooks, etc.).
 
+By default, `holon deploy` looks for `holon.yaml` and `.env` in the current working directory.
+
 **Syntax:**
 ```bash
 holon deploy [flags]
 ```
 
 **Flags:**
-- `--file <path>`: Path to the HolonDSL configuration file (default: `holon.yaml`).
+- `--file <path>`: Path to the HolonDSL configuration file (default: `holon.yaml` in current directory).
 - `--name <string>`: Override the project name defined in the YAML.
-- `--env <path>`: Path to a `.env` file for secrets (default: `.env`).
+- `--env <path>`: Path to a `.env` file for secrets (default: `.env` in same directory as holon.yaml).
 - `--dry-run`: Validate the YAML syntax and agent availability without deploying.
 
 **Example:**
 ```bash
-# Deploy default holon.yaml
+# Deploy default holon.yaml from current directory
 holon deploy
 
 # Deploy specific example

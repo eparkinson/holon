@@ -39,10 +39,11 @@ default_project: "my-project"
     2.  Generate a `holon.yaml` template.
     3.  Create a `.env.example` file.
 
-### `holon deploy [FILE]`
+### `holon deploy`
 *   **Goal:** Register/Update a workflow in the Engine.
+*   **Default Behavior:** Looks for `holon.yaml` and `.env` in the current working directory.
 *   **Logic:**
-    1.  Read `holon.yaml`.
+    1.  Read `holon.yaml` (from current directory or path specified via `--file`).
     2.  Validate against Pydantic model.
     3.  POST to `/api/v1/deploy`.
     4.  Display deployment ID and status.

@@ -117,12 +117,14 @@ def init(
     console.print("\n[bold]Next steps:[/bold]")
     console.print("  1. Edit holon.yaml to define your workflow")
     console.print("  2. Copy .env.example to .env and add your API keys")
-    console.print("  3. Deploy with: [cyan]holon deploy holon.yaml[/cyan]")
+    console.print("  3. Deploy with: [cyan]holon deploy[/cyan]")
 
 
 @app.command()
 def deploy(
-    file: Path = typer.Argument(..., help="Path to holon.yaml configuration file", exists=True),
+    file: Optional[Path] = typer.Option(
+        None, "--file", help="Path to holon.yaml configuration file"
+    ),
     name: Optional[str] = typer.Option(None, "--name", help="Override project name from YAML"),
     env_file: Optional[Path] = typer.Option(None, "--env", help="Path to .env file for secrets"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Validate without deploying"),
@@ -131,7 +133,18 @@ def deploy(
     Deploy a Holon workflow to the engine.
 
     Validates the holon.yaml configuration and registers it with the Holon Engine.
+    By default, deploys holon.yaml from the current directory.
     """
+    # Default to holon.yaml in current directory if not specified
+    if file is None:
+        file = Path.cwd() / "holon.yaml"
+
+    # Check if file exists
+    if not file.exists():
+        console.print(f"[red]✗ Configuration file not found:[/red] {file}")
+        console.print("  Use [cyan]--file[/cyan] to specify a different configuration file")
+        raise typer.Exit(code=1)
+
     console.print(f"[bold]Deploying workflow from:[/bold] {file}")
 
     # Load and validate YAML
