@@ -13,6 +13,7 @@ from .models import (
     DeployRequest,
     DeployResponse,
     ProjectSummary,
+    ProcessSummary,
     TriggerRunRequest,
     TriggerRunResponse,
     RunDetail,
@@ -106,10 +107,47 @@ async def list_projects():
     ]
 
 
-@app.get("/api/v1/processes", response_model=List[ProjectSummary])
+@app.get("/api/v1/processes", response_model=List[ProcessSummary])
 async def list_processes():
-    """List all deployed processes (alias for projects)."""
-    return await list_projects()
+    """List all deployed processes (for CLI list command)."""
+    store = get_persistence()
+    projects = store.list_projects()
+    
+    # Convert to ProcessSummary with additional fields for the CLI
+    processes = []
+    for p in projects:
+        # Calculate uptime (time since created)
+        uptime = None
+        if p.created_at:
+            delta = datetime.utcnow() - p.created_at
+            hours = int(delta.total_seconds() / 3600)
+            if hours < 24:
+                uptime = f"{hours}h"
+            else:
+                days = hours // 24
+                uptime = f"{days}d"
+        
+        # Extract trigger type from config if available
+        trigger_type = None
+        try:
+            import yaml
+            config = yaml.safe_load(p.config_yaml)
+            if config and "trigger" in config:
+                trigger_type = config["trigger"].get("type", "N/A")
+        except Exception:
+            pass
+        
+        processes.append(
+            ProcessSummary(
+                id=str(p.id),
+                name=p.name,
+                status="deployed",
+                uptime=uptime,
+                triggers=trigger_type
+            )
+        )
+    
+    return processes
 
 
 @app.post("/api/v1/projects/{project_id}/run", response_model=TriggerRunResponse)

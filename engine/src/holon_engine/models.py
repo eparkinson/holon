@@ -124,6 +124,16 @@ class ProjectSummary(BaseModel):
     created_at: datetime
 
 
+class ProcessSummary(BaseModel):
+    """Summary information about a deployed process (for list command)."""
+
+    id: str
+    name: str
+    status: str = Field(default="deployed")
+    uptime: Optional[str] = Field(default=None)
+    triggers: Optional[str] = Field(default=None)
+
+
 class RunStatus(str, Enum):
     """Status of a workflow run."""
 
