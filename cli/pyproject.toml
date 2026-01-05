@@ -45,6 +45,9 @@ holon = "holon_cli.cli:app"
 packages = ["holon_cli"]
 package-dir = {"" = "src"}
 
+[tool.setuptools.package-data]
+"*" = ["../conf.yaml"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
