@@ -107,7 +107,14 @@ XAI_API_KEY=test_key_789
 
         holon_yaml = samples_dir / "holon.yaml"
         result = subprocess.run(
-            [sys.executable, "-m", "holon_cli.cli", "deploy", str(holon_yaml)],
+            [
+                sys.executable,
+                "-m",
+                "holon_cli.cli",
+                "deploy",
+                "--file",
+                str(holon_yaml),
+            ],
             cwd=str(cli_dir),
             env=cli_env,
             capture_output=True,

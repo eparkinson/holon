@@ -126,9 +126,12 @@ Most agents require API keys (e.g., `ANTHROPIC_API_KEY`, `PERPLEXITY_API_KEY`). 
 
 Once defined, push the configuration to the Holon Engine.
 
-By default, `holon deploy` looks for `holon.yaml` and `.env` in the current directory.
+By default, `holon deploy` looks for `holon.yaml` and `.env` in the current working directory.
 
 ```bash
+# Deploy from current directory (uses holon.yaml and .env)
+holon deploy
+
 # Deploy a specific file
 holon deploy --file samples/news/holon.yaml
 ```
