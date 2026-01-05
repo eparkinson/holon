@@ -32,7 +32,7 @@ Get Holon up and running on your local machine quickly.
     This script bootstraps the Engine and Web Dashboard in Docker containers.
 
     ```bash
-    ./scripts/run_local.sh
+    ./scripts/start_local.sh
     ```
 
     Once started:
