@@ -148,7 +148,11 @@ async def list_processes():
     return processes
 
 
-@app.post("/api/v1/projects/{project_id}/run", response_model=TriggerRunResponse)
+@app.post(
+    "/api/v1/projects/{project_id}/run",
+    response_model=TriggerRunResponse,
+    status_code=202,
+)
 async def trigger_run(
     project_id: UUID, request: TriggerRunRequest, background_tasks: BackgroundTasks
 ):
