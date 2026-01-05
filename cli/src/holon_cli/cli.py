@@ -160,7 +160,9 @@ def deploy(
                             if "=" in line:
                                 key, value = line.split("=", 1)
                                 env_vars[key.strip()] = value.strip()
-                console.print(f"[green]✓[/green] Loaded {len(env_vars)} environment variables from {env_file}")
+                console.print(
+                    f"[green]✓[/green] Loaded {len(env_vars)} environment variables from {env_file}"
+                )
         else:
             # Try to find .env in the same directory as holon.yaml
             default_env = file.parent / ".env"
@@ -172,7 +174,9 @@ def deploy(
                             if "=" in line:
                                 key, value = line.split("=", 1)
                                 env_vars[key.strip()] = value.strip()
-                console.print(f"[green]✓[/green] Loaded {len(env_vars)} environment variables from {default_env}")
+                console.print(
+                    f"[green]✓[/green] Loaded {len(env_vars)} environment variables from {default_env}"
+                )
 
         console.print("[green]✓[/green] Configuration validated successfully")
         console.print(f"  Project: [cyan]{config.project}[/cyan]")

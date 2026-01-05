@@ -19,9 +19,9 @@ def db_session():
     Base.metadata.create_all(engine)
     SessionMaker = sessionmaker(bind=engine)
     session = SessionMaker()
-    
+
     yield session
-    
+
     session.close()
     Base.metadata.drop_all(engine)
 
@@ -44,10 +44,10 @@ workflow:
       agent: researcher
       instruction: "Research ${trigger.input.topic}"
 """
-    
+
     engine = WorkflowEngine(db_session)
     config = engine.parse_config(config_yaml)
-    
+
     assert config.version == "1.0"
     assert config.project == "Test-Project"
     assert len(config.resources) == 1
@@ -62,7 +62,7 @@ def test_parse_invalid_config(db_session):
 version: "1.0"
 # Missing required fields
 """
-    
+
     engine = WorkflowEngine(db_session)
     with pytest.raises(Exception):
         engine.parse_config(invalid_yaml)
@@ -89,24 +89,24 @@ workflow:
       agent: test_agent
       instruction: "Step 2"
 """
-    
+
     # Create a run
     run = Run(
         id="test-run-001",
         project_id="test-project-001",
         status=RunStatus.PENDING,
-        input_context={"topic": "AI"}
+        input_context={"topic": "AI"},
     )
     db_session.add(run)
     db_session.commit()
-    
+
     # Execute the run
     engine = WorkflowEngine(db_session)
     engine.execute_run(run, config_yaml)
-    
+
     # Refresh the run from DB
     db_session.refresh(run)
-    
+
     # Check that the run completed successfully
     assert run.status == RunStatus.COMPLETED
     assert run.context is not None
@@ -133,24 +133,24 @@ workflow:
       agent: test_agent
       instruction: "Research ${trigger.input.topic} in ${trigger.input.language}"
 """
-    
+
     # Create a run with input context
     run = Run(
         id="test-run-002",
         project_id="test-project-002",
         status=RunStatus.PENDING,
-        input_context={"topic": "Quantum Computing", "language": "Python"}
+        input_context={"topic": "Quantum Computing", "language": "Python"},
     )
     db_session.add(run)
     db_session.commit()
-    
+
     # Execute the run
     engine = WorkflowEngine(db_session)
     engine.execute_run(run, config_yaml)
-    
+
     # Refresh and check
     db_session.refresh(run)
-    
+
     assert run.status == RunStatus.COMPLETED
     # The resolved instruction should be in the trace events
     # which are stored separately, but we can check the context was set up
@@ -174,22 +174,22 @@ workflow:
   type: scatter-gather
   steps: []
 """
-    
+
     run = Run(
         id="test-run-003",
         project_id="test-project-003",
         status=RunStatus.PENDING,
-        input_context={}
+        input_context={},
     )
     db_session.add(run)
     db_session.commit()
-    
+
     # Execute - should fail due to unsupported workflow type
     engine = WorkflowEngine(db_session)
-    
+
     with pytest.raises(NotImplementedError):
         engine.execute_run(run, invalid_config)
-    
+
     # Refresh and check that run is marked as FAILED
     db_session.refresh(run)
     assert run.status == RunStatus.FAILED

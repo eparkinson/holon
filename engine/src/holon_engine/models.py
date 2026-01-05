@@ -106,7 +106,9 @@ class DeployRequest(BaseModel):
 
     name: str = Field(..., example="Daily-Briefing")
     config_yaml: str = Field(..., description="The raw YAML content of holon.yaml")
-    env_vars: Optional[Dict[str, str]] = Field(None, description="Environment variables from .env file")
+    env_vars: Optional[Dict[str, str]] = Field(
+        None, description="Environment variables from .env file"
+    )
 
 
 class DeployResponse(BaseModel):
@@ -204,7 +206,9 @@ class Project(BaseModel):
     id: UUID
     name: str
     config_yaml: str
-    env_vars: Optional[Dict[str, str]] = Field(default=None, description="Environment variables")
+    env_vars: Optional[Dict[str, str]] = Field(
+        default=None, description="Environment variables"
+    )
     created_at: datetime
 
 

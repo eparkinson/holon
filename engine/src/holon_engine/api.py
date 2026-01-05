@@ -21,7 +21,7 @@ from .models import (
     Project,
     Run,
     RunStatus,
-    TraceEvent
+    TraceEvent,
 )
 from .persistence import get_persistence, PersistenceService
 from .engine import WorkflowEngine
@@ -31,12 +31,14 @@ from . import __version__
 # Set up logging
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize persistence on startup."""
     # Ensure persistence layer is ready (e.g. create folders)
     get_persistence()
     yield
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -72,16 +74,16 @@ async def get_version():
 async def deploy_project(request: DeployRequest):
     """Deploy a HolonDSL configuration."""
     store = get_persistence()
-    
+
     project_id = uuid4()
     project = Project(
         id=project_id,
         name=request.name,
         config_yaml=request.config_yaml,
         env_vars=request.env_vars,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
-    
+
     try:
         store.save_project(project)
         logger.info(f"Deployed project {project.name} ({project_id})")
@@ -96,14 +98,9 @@ async def list_projects():
     """List all deployed projects."""
     store = get_persistence()
     projects = store.list_projects()
-    
+
     return [
-        ProjectSummary(
-            id=p.id,
-            name=p.name,
-            created_at=p.created_at
-        )
-        for p in projects
+        ProjectSummary(id=p.id, name=p.name, created_at=p.created_at) for p in projects
     ]
 
 
@@ -112,7 +109,7 @@ async def list_processes():
     """List all deployed processes (for CLI list command)."""
     store = get_persistence()
     projects = store.list_projects()
-    
+
     # Convert to ProcessSummary with additional fields for the CLI
     processes = []
     for p in projects:
@@ -126,42 +123,41 @@ async def list_processes():
             else:
                 days = hours // 24
                 uptime = f"{days}d"
-        
+
         # Extract trigger type from config if available
         trigger_type = None
         try:
             import yaml
+
             config = yaml.safe_load(p.config_yaml)
             if config and "trigger" in config:
                 trigger_type = config["trigger"].get("type", "N/A")
         except Exception:
             pass
-        
+
         processes.append(
             ProcessSummary(
                 id=str(p.id),
                 name=p.name,
                 status="deployed",
                 uptime=uptime,
-                triggers=trigger_type
+                triggers=trigger_type,
             )
         )
-    
+
     return processes
 
 
 @app.post("/api/v1/projects/{project_id}/run", response_model=TriggerRunResponse)
 async def trigger_run(
-    project_id: UUID, 
-    request: TriggerRunRequest, 
-    background_tasks: BackgroundTasks
+    project_id: UUID, request: TriggerRunRequest, background_tasks: BackgroundTasks
 ):
     """Trigger a new run for a project."""
     store = get_persistence()
     project = store.get_project(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
+
     run_id = uuid4()
     run = Run(
         id=run_id,
@@ -169,15 +165,15 @@ async def trigger_run(
         status=RunStatus.PENDING,
         input_context=request.input_context,
         started_at=None,
-        ended_at=None
+        ended_at=None,
     )
-    
+
     store.save_run(run)
-    
+
     # Initialize engine and run in background
     engine_instance = WorkflowEngine(store)
     background_tasks.add_task(engine_instance.execute_run, run_id, project.config_yaml)
-    
+
     return TriggerRunResponse(run_id=run_id, status=RunStatus.PENDING)
 
 
@@ -188,14 +184,14 @@ async def get_run(run_id: UUID):
     run = store.get_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
-    
+
     return RunDetail(
         id=run.id,
         project_id=run.project_id,
         status=run.status,
         context=run.context,
         started_at=run.started_at,
-        ended_at=run.ended_at
+        ended_at=run.ended_at,
     )
 
 
@@ -206,5 +202,5 @@ async def get_run_logs(run_id: UUID):
     run = store.get_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
-    
+
     return run.trace_events
