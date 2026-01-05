@@ -1,0 +1,92 @@
+version: "1.0"
+project: "Daily-Briefing-Digest"
+
+# 1. TRIGGER: Run every morning at 7 AM
+trigger:
+  type: schedule
+  cron: "0 7 * * *"
+  # Context variables available to the workflow
+  context:
+    topics:
+      - "Rust Programming Language updates"
+      - "AI Agent Frameworks"
+      - "SpaceX Starship progress"
+    preferred_sources:
+      - "Hacker News"
+      - "ArXiv"
+      - "TechCrunch"
+
+# 2. RESOURCES: The Agents
+resources:
+  - id: news_hunter
+    provider: perplexity
+    model: sonar-reasoning
+
+  - id: x_hunter
+    provider: grok
+    model: grok-beta
+  
+  - id: editor
+    provider: claude
+    model: 3-5-sonnet
+    # Example: Mount a filesystem tool to save the report directly
+    tools: [filesystem_mcp]
+
+  - id: filesystem_mcp
+    type: mcp-server
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "./briefings"]
+
+# 3. WORKFLOW
+workflow:
+  type: sequential
+  steps:
+    # Step 1: Research all topics in parallel (Web + Social)
+    - id: fetch_intelligence
+      type: scatter-gather
+      parallel_tasks:
+        # Sub-task A: Perplexity for Web News
+        - id: fetch_web_news
+          type: map
+          items: ${trigger.context.topics} 
+          task:
+            agent: news_hunter
+            instruction: |
+              Find the top 3 most significant news stories from the last 24 hours regarding: {item}.
+              Prioritize information from these sources: {trigger.context.preferred_sources}.
+              Return a structured list with Title, URL, and a 2-sentence summary for each story.
+
+        # Sub-task B: Grok for Social Sentiment/News
+        - id: fetch_social_news
+          type: map
+          items: ${trigger.context.topics}
+          task:
+            agent: x_hunter
+            instruction: |
+              Search X (Twitter) for breaking news and high-engagement discussions regarding: {item}.
+              Focus on key opinion leaders and official accounts.
+              Return a list of trending threads with links and summaries.
+
+    # Step 2: Compile the digest
+    - id: compile_digest
+      agent: editor
+      inputs: [fetch_intelligence.results]
+      instruction: |
+        You are the Editor-in-Chief. 
+        Take the raw research results from the news hunters and compile a "Morning Briefing" Markdown document.
+        
+        Format:
+        # ☕ Morning Briefing - {date}
+        
+        ## {Topic Name}
+        - **{Headline}** - {Summary} [Source]({Link})
+        
+        Group by topic. Keep it punchy and professional. Remove duplicates.
+
+    # Step 3: Deliver (Save to file)
+    - id: deliver
+      type: action
+      action: file.write
+      params:
+        path: "./briefings/briefing_{date}.md"
+        content: ${compile_digest.output}

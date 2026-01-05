@@ -1,0 +1,61 @@
+version: "1.0"
+project: "My-Personal-Chief-of-Staff"
+
+# 1. TRIGGER: Chat Interface (Slack/WhatsApp)
+trigger:
+  type: adapter
+  platform: slack
+  channel: "#my-assistant"
+  mode: "direct_message" # Responds to DMs and mentions
+
+# 2. RESOURCES: The Agent & Tools
+resources:
+  - id: chief_of_staff
+    provider: anthropic
+    model: claude-3-5-sonnet
+    # Mount MCP Servers as tools
+    tools: [outlook_mcp, todoist_mcp, filesystem_mcp]
+
+  # MCP Server: Outlook (Email & Calendar)
+  - id: outlook_mcp
+    type: mcp-server
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-outlook"]
+    env:
+      OUTLOOK_TOKEN: ${OUTLOOK_TOKEN}
+
+  # MCP Server: Todoist (Task Management)
+  - id: todoist_mcp
+    type: mcp-server
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-todoist"]
+    env:
+      TODOIST_API_KEY: ${TODOIST_API_KEY}
+      
+  # MCP Server: Filesystem (for saving notes/memories)
+  - id: filesystem_mcp
+    type: mcp-server
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "./memories"]
+
+# 3. WORKFLOW
+workflow:
+  type: sequential
+  steps:
+    - id: handle_request
+      agent: chief_of_staff
+      # The input comes directly from the chat message
+      instruction: |
+        You are my personal Chief of Staff.
+        
+        Your goal is to help me manage my day, triage emails, and track tasks.
+        
+        Incoming Message: "{trigger.message}"
+        Sender: "{trigger.user}"
+        
+        Capabilities:
+        1. Check my calendar and emails using the Outlook tool.
+        2. Add tasks to my Todoist using the Todoist tool.
+        3. Save important notes to the filesystem.
+        
+        Always be concise, professional, and proactive. If you need clarification, ask.
