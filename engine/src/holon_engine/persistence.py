@@ -22,11 +22,11 @@ class PersistenceService:
         # Initialize filesystem
         # s3fs/fsspec might require kwargs for credentials if not in env
         self.fs = fsspec.filesystem(self.protocol, auto_mkdir=True)
-        
+
         # Ensure structure exists
         if self.protocol == "file":
-             os.makedirs(os.path.join(self.root_path, "projects"), exist_ok=True)
-             os.makedirs(os.path.join(self.root_path, "runs"), exist_ok=True)
+            os.makedirs(os.path.join(self.root_path, "projects"), exist_ok=True)
+            os.makedirs(os.path.join(self.root_path, "runs"), exist_ok=True)
 
     def _path(self, *parts):
         """Construct a path compatible with the filesystem."""
@@ -58,7 +58,7 @@ class PersistenceService:
         # glob returns full paths including protocol prefix sometimes, or just path
         # fsspec's fs.glob usually returns paths relative to fs root or absolute paths
         files = self.fs.glob(f"{projects_dir}/*.json")
-        
+
         projects = []
         for file_path in files:
             # Re-add protocol if glob strips it, or just open directly

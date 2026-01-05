@@ -46,6 +46,7 @@ XAI_API_KEY=test_key_789
 
     # Clean up any existing test data
     import shutil
+
     test_data_dir = Path("/tmp/holon_test_data")
     if test_data_dir.exists():
         shutil.rmtree(test_data_dir)
@@ -124,7 +125,11 @@ XAI_API_KEY=test_key_789
             if "Process ID:" in line:
                 # Extract UUID from the line
                 import re
-                match = re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", line)
+
+                match = re.search(
+                    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+                    line,
+                )
                 if match:
                     project_id = match.group(0)
                     break
