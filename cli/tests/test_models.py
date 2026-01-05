@@ -130,6 +130,7 @@ def test_workflow_task_validation():
         type="map",
         items="${items}",
         task=WorkflowTask(
+            id="nested_task",  # Add ID for consistency
             agent="agent1",
             instruction="Process {item}"
         )
