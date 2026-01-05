@@ -165,3 +165,8 @@ class TraceEvent(BaseModel):
     output: Optional[Dict[str, Any]] = None
     metrics: Optional[TraceEventMetrics] = None
     timestamp: datetime
+
+
+class VersionResponse(BaseModel):
+    """Response for GET /version."""
+    version: str = Field(..., description="Version of the Holon Engine")
