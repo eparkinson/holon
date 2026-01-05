@@ -1,5 +1,6 @@
 """FastAPI application for the Holon Engine API."""
 
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List
@@ -19,8 +20,12 @@ from .models import (
     RunStatus,
 )
 from .database import init_db, get_session_maker, Project, Run
+from .database import TraceEvent as DBTraceEvent  # Avoid name collision
 from .engine import WorkflowEngine
 
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Global database session maker
 SessionMaker = None
@@ -191,12 +196,9 @@ async def get_run_logs(run_id: UUID):
             raise HTTPException(status_code=404, detail="Run not found")
         
         # Get trace events ordered by timestamp
-        trace_events = session.query(
-            # Import TraceEvent from database to avoid name collision
-            __import__('holon_engine.database', fromlist=['TraceEvent']).TraceEvent
-        ).filter_by(run_id=run.id).order_by(
-            __import__('holon_engine.database', fromlist=['TraceEvent']).TraceEvent.timestamp
-        ).all()
+        trace_events = session.query(DBTraceEvent).filter_by(
+            run_id=run.id
+        ).order_by(DBTraceEvent.timestamp).all()
         
         return [
             TraceEvent(
@@ -233,7 +235,7 @@ def execute_run_task(run_id: str, config_yaml: str):
         workflow_engine.execute_run(run, config_yaml)
     except Exception as e:
         # Error handling is done within execute_run
-        print(f"Error executing run {run_id}: {e}")
+        logger.error(f"Error executing run {run_id}: {e}", exc_info=True)
     finally:
         session.close()
 

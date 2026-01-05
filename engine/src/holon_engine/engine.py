@@ -45,6 +45,9 @@ class WorkflowEngine:
             run: The Run database object to execute
             config_yaml: The YAML configuration to execute
         """
+        # Initialize context early so it's always available
+        context = {}
+        
         try:
             # Parse the configuration
             config = self.parse_config(config_yaml)
@@ -79,7 +82,7 @@ class WorkflowEngine:
             # Update run status to FAILED
             run.status = RunStatus.FAILED
             run.ended_at = datetime.utcnow()
-            run.context = context if 'context' in locals() else {"error": str(e)}
+            run.context = context if context else {"error": str(e)}
             self.db_session.commit()
             raise
     
