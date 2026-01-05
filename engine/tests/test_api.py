@@ -55,6 +55,15 @@ def test_health_check(test_client):
     assert response.json() == {"status": "healthy"}
 
 
+def test_version_endpoint(test_client):
+    """Test the version endpoint."""
+    response = test_client.get("/api/v1/version")
+    assert response.status_code == 200
+    data = response.json()
+    assert "version" in data
+    assert data["version"] == "0.1.0"
+
+
 def test_deploy_project(test_client):
     """Test deploying a project."""
     config_yaml = """

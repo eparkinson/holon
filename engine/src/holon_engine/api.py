@@ -18,10 +18,12 @@ from .models import (
     RunDetail,
     TraceEvent,
     RunStatus,
+    VersionResponse,
 )
 from .database import init_db, get_session_maker, Project, Run
 from .database import TraceEvent as DBTraceEvent  # Avoid name collision
 from .engine import WorkflowEngine
+from . import __version__
 
 
 # Set up logging
@@ -248,3 +250,13 @@ def execute_run_task(run_id: str, config_yaml: str):
 async def health_check():
     """Simple health check endpoint."""
     return {"status": "healthy"}
+
+
+@app.get("/api/v1/version", response_model=VersionResponse)
+async def get_version():
+    """
+    Get Engine Version.
+    
+    Returns the current version of the Holon Engine.
+    """
+    return VersionResponse(version=__version__)
