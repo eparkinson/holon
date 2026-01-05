@@ -66,8 +66,10 @@ web/
 - **Mock Data**: Shows example workflow with 2 steps
 
 ### 4. Chat View (`/chat`)
-- **Placeholder UI**: Ready for DeepChat integration
-- **Future Enhancement**: Will connect to agent WebSocket
+- **DeepChat Integration**: Fully functional chat interface using DeepChat React
+- **Demo Mode**: Interactive skeleton with pre-populated conversation
+- **Custom Styling**: Matches Holon Dashboard design system
+- **Future Enhancement**: Ready to connect to Holon Engine WebSocket/API
 
 ## Technology Choices
 

@@ -7,7 +7,7 @@ The Holon Dashboard is a React-based Single Page Application (SPA) that provides
 - **Dashboard Home**: System health overview with stats cards and recent activity
 - **Projects Management**: Deploy and manage Holon configurations
 - **Run Details**: Debug workflow executions with trace visualization
-- **Chat Interface**: Interactive agent playground (coming soon)
+- **Chat Interface**: Interactive agent playground with DeepChat integration
 
 ## Technology Stack
 
@@ -16,6 +16,7 @@ The Holon Dashboard is a React-based Single Page Application (SPA) that provides
 - **Styling**: TailwindCSS
 - **State Management**: TanStack Query (React Query)
 - **Routing**: React Router v6
+- **Chat Component**: DeepChat React
 - **Icons**: Lucide React
 
 ## Getting Started
