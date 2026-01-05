@@ -1,13 +1,15 @@
 """Pydantic models for Holon configuration validation."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
 class TriggerConfig(BaseModel):
     """Configuration for workflow triggers."""
 
-    type: str = Field(..., description="Trigger type (schedule, webhook, adapter, websocket, watcher)")
+    type: str = Field(
+        ..., description="Trigger type (schedule, webhook, adapter, websocket, watcher)"
+    )
     cron: Optional[str] = Field(None, description="Cron expression for schedule triggers")
     route: Optional[str] = Field(None, description="API route for webhook triggers")
     platform: Optional[str] = Field(None, description="Platform for adapter triggers")
@@ -20,7 +22,9 @@ class ResourceConfig(BaseModel):
     """Configuration for agents and MCP servers."""
 
     id: str = Field(..., description="Unique identifier for the resource")
-    provider: Optional[str] = Field(None, description="Provider (anthropic, openai, perplexity, etc.)")
+    provider: Optional[str] = Field(
+        None, description="Provider (anthropic, openai, perplexity, etc.)"
+    )
     model: Optional[str] = Field(None, description="Model name")
     type: Optional[str] = Field(None, description="Resource type (mcp-server, etc.)")
     command: Optional[str] = Field(None, description="Command for MCP servers")
@@ -38,7 +42,9 @@ class WorkflowTask(BaseModel):
     type: Optional[str] = Field(None, description="Task type (map, scatter-gather, action)")
     items: Optional[str] = Field(None, description="Items to iterate over for map tasks")
     task: Optional["WorkflowTask"] = Field(None, description="Nested task for map operations")
-    parallel_tasks: Optional[List["WorkflowTask"]] = Field(None, description="Parallel tasks for scatter-gather")
+    parallel_tasks: Optional[List["WorkflowTask"]] = Field(
+        None, description="Parallel tasks for scatter-gather"
+    )
     inputs: Optional[List[str]] = Field(None, description="Input references")
     action: Optional[str] = Field(None, description="Action name for action tasks")
     params: Optional[Dict[str, Any]] = Field(None, description="Parameters for action tasks")
