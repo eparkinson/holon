@@ -1,0 +1,193 @@
+openapi: 3.0.3
+info:
+  title: Holon Engine API
+  description: The control plane API for the Holon Agent Orchestration Engine.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local Development Server
+
+paths:
+  /deploy:
+    post:
+      summary: Deploy a Project
+      description: Validates and registers a new HolonDSL configuration.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Daily-Briefing"
+                config_yaml:
+                  type: string
+                  description: The raw YAML content of holon.yaml
+                  example: "version: '1.0'..."
+      responses:
+        '200':
+          description: Deployment Successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  project_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: "deployed"
+        '400':
+          description: Invalid YAML Configuration
+
+  /projects:
+    get:
+      summary: List Projects
+      description: Returns a list of all deployed projects.
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectSummary'
+
+  /projects/{project_id}/run:
+    post:
+      summary: Trigger a Run
+      description: Manually triggers a workflow execution for a specific project.
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input_context:
+                  type: object
+                  description: Optional JSON payload to inject into ${trigger.input}
+                  example: { "topic": "Rust" }
+      responses:
+        '202':
+          description: Run Accepted (Async)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  run_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: "PENDING"
+
+  /runs/{run_id}:
+    get:
+      summary: Get Run Status
+      description: Retrieve the current status and context of a specific run.
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Run Details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunDetail'
+
+  /runs/{run_id}/logs:
+    get:
+      summary: Get Run Logs (Trace)
+      description: Retrieve the list of trace events (steps executed) for a run.
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trace Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TraceEvent'
+
+components:
+  schemas:
+    ProjectSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    RunDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED]
+        context:
+          type: object
+          description: The final blackboard state
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+
+    TraceEvent:
+      type: object
+      properties:
+        step_id:
+          type: string
+        status:
+          type: string
+          enum: [COMPLETED, FAILED]
+        input:
+          type: object
+        output:
+          type: object
+        metrics:
+          type: object
+          properties:
+            latency_ms:
+              type: integer
+            cost_usd:
+              type: number
+        timestamp:
+          type: string
+          format: date-time

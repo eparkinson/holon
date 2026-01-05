@@ -215,7 +215,7 @@ holon/
 │   ├── package.json
 │   └── src/
 ├── samples/             # Example holon.yaml configurations
-├── specs/               # Design specifications and architecture docs
+├── docs/               # Design specifications and architecture docs
 └── docker-compose.yaml  # Orchestrates Engine + Web for local dev
 ```
 
