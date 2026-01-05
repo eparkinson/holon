@@ -84,3 +84,60 @@ resources:
 ```
 
 *Note: Local agents may have limited tool-calling capabilities compared to cloud providers.*
+
+---
+
+## 5. Development Guidelines
+
+### Code Formatting and Linting
+
+Before submitting a pull request, ensure your code is properly formatted and linted to avoid CI failures.
+
+#### CLI (Python)
+
+```bash
+cd cli
+
+# Install development dependencies
+pip install -e .[dev]
+
+# Format code with Black
+black src/
+
+# Check formatting (without modifying files)
+black --check src/
+
+# Run Ruff linter
+ruff check src/
+
+# Run tests
+pytest -v
+```
+
+#### Engine (Python)
+
+```bash
+cd engine
+
+# Install development dependencies
+pip install -e .[dev]
+
+# Format code with Black
+black src/ tests/
+
+# Check formatting (without modifying files)
+black --check src/ tests/
+
+# Run tests
+pytest -v
+```
+
+#### Integration Tests
+
+```bash
+# From repository root
+black tests/
+black --check tests/
+```
+
+**Pro Tip:** Always run `black --check` before committing to catch formatting issues early. The CI pipeline will fail if code is not properly formatted.
