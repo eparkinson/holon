@@ -13,28 +13,25 @@ if [ ! -f "holon.db" ]; then
     touch holon.db
 fi
 
-# Function to handle cleanup on exit
-cleanup() {
+echo "Starting Holon services (output suppressed)..."
+
+# Start services in detached mode, suppressing output.
+# If it fails, we rerun with logs visible to show the error.
+if ! docker-compose up -d --build --remove-orphans > /dev/null 2>&1; then
     echo ""
-    echo "Stopping Holon services..."
-    docker-compose down
-}
-
-# Set trap to call cleanup function on script exit (including Ctrl+C)
-trap cleanup EXIT
-
-echo "Starting Holon Engine and Web Dashboard..."
-docker-compose up -d --build
+    echo "❌ Failed to start Holon services. Retrying with full logging to diagnose:"
+    docker-compose up -d --build --remove-orphans
+    exit 1
+fi
 
 echo ""
 echo "----------------------------------------------------------------"
-echo "🚀 Holon is up and running!"
-echo ""
+echo "🚀 Holon local environment is ready!"
+echo "----------------------------------------------------------------"
 echo "📱 Web Dashboard:  http://localhost:3000"
 echo "🔌 API Swagger UI: http://localhost:8000/docs"
+echo ""
+echo "Commands:"
+echo "  - View logs:    docker-compose logs -f"
+echo "  - Stop:         ./scripts/stop_local.sh"
 echo "----------------------------------------------------------------"
-echo ""
-echo "Tailing logs (Press Ctrl+C to stop services)..."
-echo ""
-
-docker-compose logs -f

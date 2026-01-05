@@ -20,17 +20,22 @@ Deploys a HolonDSL configuration file (`.yaml`) to the backend service. This reg
 
 **Syntax:**
 ```bash
-holon deploy <path/to/holon.yaml> [flags]
+holon deploy [flags]
 ```
 
 **Flags:**
+- `--file <path>`: Path to the HolonDSL configuration file (default: `holon.yaml`).
 - `--name <string>`: Override the project name defined in the YAML.
-- `--env <path>`: Path to a `.env` file for secrets (API keys, etc.).
+- `--env <path>`: Path to a `.env` file for secrets (default: `.env`).
 - `--dry-run`: Validate the YAML syntax and agent availability without deploying.
 
 **Example:**
 ```bash
-holon deploy samples/news/holon.yaml --env .env.production
+# Deploy default holon.yaml
+holon deploy
+
+# Deploy specific example
+holon deploy --file samples/news/holon.yaml
 # Output: Deployed 'Daily-Briefing-Digest' (ID: digest-8f7a2)
 ```
 
