@@ -77,6 +77,7 @@ async def deploy_project(request: DeployRequest):
         id=project_id,
         name=request.name,
         config_yaml=request.config_yaml,
+        env_vars=request.env_vars,
         created_at=datetime.utcnow()
     )
     
@@ -103,6 +104,12 @@ async def list_projects():
         )
         for p in projects
     ]
+
+
+@app.get("/api/v1/processes", response_model=List[ProjectSummary])
+async def list_processes():
+    """List all deployed processes (alias for projects)."""
+    return await list_projects()
 
 
 @app.post("/api/v1/projects/{project_id}/run", response_model=TriggerRunResponse)

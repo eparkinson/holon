@@ -146,6 +146,34 @@ def deploy(
         if name:
             config.project = name
 
+        # Load environment variables from .env file
+        env_vars = {}
+        if env_file:
+            if not env_file.exists():
+                console.print(f"[yellow]Warning:[/yellow] .env file not found at {env_file}")
+            else:
+                with open(env_file, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        # Skip comments and empty lines
+                        if line and not line.startswith("#"):
+                            if "=" in line:
+                                key, value = line.split("=", 1)
+                                env_vars[key.strip()] = value.strip()
+                console.print(f"[green]✓[/green] Loaded {len(env_vars)} environment variables from {env_file}")
+        else:
+            # Try to find .env in the same directory as holon.yaml
+            default_env = file.parent / ".env"
+            if default_env.exists():
+                with open(default_env, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#"):
+                            if "=" in line:
+                                key, value = line.split("=", 1)
+                                env_vars[key.strip()] = value.strip()
+                console.print(f"[green]✓[/green] Loaded {len(env_vars)} environment variables from {default_env}")
+
         console.print("[green]✓[/green] Configuration validated successfully")
         console.print(f"  Project: [cyan]{config.project}[/cyan]")
         console.print(f"  Resources: {len(config.resources)}")
@@ -159,10 +187,21 @@ def deploy(
         cli_config = load_config()
 
         try:
+            # Read the raw YAML content
+            with open(file, "r") as f:
+                config_yaml = f.read()
+
+            deploy_data = {
+                "name": config.project,
+                "config_yaml": config_yaml,
+            }
+            if env_vars:
+                deploy_data["env_vars"] = env_vars
+
             with console.status("[bold blue]Deploying to engine..."):
                 response = httpx.post(
                     f"{cli_config.host}/api/v1/deploy",
-                    json=config.model_dump(),
+                    json=deploy_data,
                     headers=(
                         {"Authorization": f"Bearer {cli_config.api_key}"}
                         if cli_config.api_key
@@ -174,7 +213,7 @@ def deploy(
 
             result = response.json()
             console.print("[bold green]✓ Deployment successful![/bold green]")
-            console.print(f"  Process ID: [cyan]{result.get('process_id', 'N/A')}[/cyan]")
+            console.print(f"  Process ID: [cyan]{result.get('project_id', 'N/A')}[/cyan]")
             console.print(f"  Status: {result.get('status', 'N/A')}")
 
         except httpx.ConnectError:

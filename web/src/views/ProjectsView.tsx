@@ -1,17 +1,40 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { apiClient } from '@/services/api';
+import type { ProjectSummary } from '@/types/api';
 
 export function ProjectsView() {
-  // Mock data - will be replaced with real API data
-  const projects = [
-    {
-      id: '1',
-      name: 'Daily Market Briefing',
-      created_at: '2024-01-01T00:00:00Z',
-      triggerType: 'Schedule',
-    },
-  ];
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const data = await apiClient.listProjects();
+        setProjects(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load projects');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  const handleRunProject = async (projectId: string) => {
+    try {
+      await apiClient.triggerRun(projectId);
+      // Optionally show success message or navigate to run view
+    } catch (err) {
+      console.error('Failed to trigger run:', err);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -29,7 +52,17 @@ export function ProjectsView() {
       </div>
 
       {/* Projects Grid */}
-      {projects.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12">Loading projects...</div>
+      ) : error ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center text-red-500">
+              <p>Error loading projects: {error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : projects.length === 0 ? (
         <Card>
           <CardContent className="py-12">
             <div className="text-center">
@@ -49,15 +82,15 @@ export function ProjectsView() {
               <CardHeader>
                 <CardTitle>{project.name}</CardTitle>
                 <CardDescription>
-                  Trigger: {project.triggerType}
+                  Created {new Date(project.created_at).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    Created {new Date(project.created_at).toLocaleDateString()}
+                    ID: {project.id.substring(0, 8)}...
                   </span>
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => handleRunProject(project.id)}>
                     <Play className="mr-2 h-3 w-3" />
                     Run
                   </Button>
