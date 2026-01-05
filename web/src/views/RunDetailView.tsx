@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Clock, DollarSign } from 'lucide-react';
+import { formatDuration } from '@/lib/utils';
 
 export function RunDetailView() {
   const { runId } = useParams<{ runId: string }>();
@@ -36,6 +37,8 @@ export function RunDetailView() {
     },
   ];
 
+  const duration = formatDuration(run.started_at, run.ended_at);
+
   return (
     <div className="space-y-6">
       <div>
@@ -63,7 +66,7 @@ export function RunDetailView() {
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">
-                Duration: {run.ended_at ? '5m 0s' : 'Running...'}
+                Duration: {duration}
               </span>
             </div>
             <div className="flex items-center space-x-2">

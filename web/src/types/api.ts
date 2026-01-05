@@ -23,6 +23,8 @@ export interface RunDetail {
 
 export interface TraceEvent {
   step_id: string;
+  // TraceEvent status is limited to terminal states only
+  // (steps are only logged once completed or failed)
   status: 'COMPLETED' | 'FAILED';
   input: Record<string, unknown>;
   output: Record<string, unknown>;
