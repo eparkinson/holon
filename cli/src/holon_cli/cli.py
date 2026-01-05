@@ -51,52 +51,41 @@ def init(
     name: str = typer.Option(
         ..., "--name", "-n", prompt="Project name", help="Name of the project"
     ),
-    path: Path = typer.Option(
-        Path.cwd(), "--path", "-p", help="Path where to create the project"
-    ),
+    path: Path = typer.Option(Path.cwd(), "--path", "-p", help="Path where to create the project"),
 ):
     """
     Initialize a new Holon project with a template holon.yaml.
-    
+
     Creates a basic holon.yaml configuration file and .env.example.
     """
     console.print(f"[bold green]Initializing new Holon project:[/bold green] {name}")
-    
+
     # Create holon.yaml template
     holon_file = path / "holon.yaml"
     if holon_file.exists():
         if not typer.confirm(f"{holon_file} already exists. Overwrite?"):
             raise typer.Abort()
-    
+
     template = {
         "version": "1.0",
         "project": name,
-        "trigger": {
-            "type": "webhook",
-            "route": "/api/v1/trigger"
-        },
-        "resources": [
-            {
-                "id": "assistant",
-                "provider": "anthropic",
-                "model": "claude-3-5-sonnet"
-            }
-        ],
+        "trigger": {"type": "webhook", "route": "/api/v1/trigger"},
+        "resources": [{"id": "assistant", "provider": "anthropic", "model": "claude-3-5-sonnet"}],
         "workflow": {
             "type": "sequential",
             "steps": [
                 {
                     "id": "process_request",
                     "agent": "assistant",
-                    "instruction": "Process the incoming request: {trigger.input}"
+                    "instruction": "Process the incoming request: {trigger.input}",
                 }
-            ]
-        }
+            ],
+        },
     }
-    
+
     with open(holon_file, "w") as f:
         yaml.dump(template, f, default_flow_style=False, sort_keys=False)
-    
+
     # Create .env.example
     env_file = path / ".env.example"
     with open(env_file, "w") as f:
@@ -104,7 +93,7 @@ def init(
         f.write("ANTHROPIC_API_KEY=your_api_key_here\n")
         f.write("OPENAI_API_KEY=your_api_key_here\n")
         f.write("PERPLEXITY_API_KEY=your_api_key_here\n")
-    
+
     console.print(f"[green]✓[/green] Created {holon_file}")
     console.print(f"[green]✓[/green] Created {env_file}")
     console.print("\n[bold]Next steps:[/bold]")
@@ -115,72 +104,68 @@ def init(
 
 @app.command()
 def deploy(
-    file: Path = typer.Argument(
-        ..., help="Path to holon.yaml configuration file", exists=True
-    ),
-    name: Optional[str] = typer.Option(
-        None, "--name", help="Override project name from YAML"
-    ),
-    env_file: Optional[Path] = typer.Option(
-        None, "--env", help="Path to .env file for secrets"
-    ),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Validate without deploying"
-    ),
+    file: Path = typer.Argument(..., help="Path to holon.yaml configuration file", exists=True),
+    name: Optional[str] = typer.Option(None, "--name", help="Override project name from YAML"),
+    env_file: Optional[Path] = typer.Option(None, "--env", help="Path to .env file for secrets"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Validate without deploying"),
 ):
     """
     Deploy a Holon workflow to the engine.
-    
+
     Validates the holon.yaml configuration and registers it with the Holon Engine.
     """
     console.print(f"[bold]Deploying workflow from:[/bold] {file}")
-    
+
     # Load and validate YAML
     try:
         with open(file, "r") as f:
             config_data = yaml.safe_load(f)
-        
+
         # Validate with Pydantic
         config = HolonConfig(**config_data)
-        
+
         # Override name if provided
         if name:
             config.project = name
-        
-        console.print(f"[green]✓[/green] Configuration validated successfully")
+
+        console.print("[green]✓[/green] Configuration validated successfully")
         console.print(f"  Project: [cyan]{config.project}[/cyan]")
         console.print(f"  Resources: {len(config.resources)}")
         console.print(f"  Workflow steps: {len(config.workflow.steps)}")
-        
+
         if dry_run:
             console.print("[yellow]Dry run - not deploying to engine[/yellow]")
             return
-        
+
         # Deploy to engine
         cli_config = load_config()
-        
+
         try:
             with console.status("[bold blue]Deploying to engine..."):
                 response = httpx.post(
                     f"{cli_config.host}/api/v1/deploy",
                     json=config.model_dump(),
-                    headers={"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {},
+                    headers=(
+                        {"Authorization": f"Bearer {cli_config.api_key}"}
+                        if cli_config.api_key
+                        else {}
+                    ),
                     timeout=30.0,
                 )
                 response.raise_for_status()
-                
+
             result = response.json()
-            console.print(f"[bold green]✓ Deployment successful![/bold green]")
+            console.print("[bold green]✓ Deployment successful![/bold green]")
             console.print(f"  Process ID: [cyan]{result.get('process_id', 'N/A')}[/cyan]")
             console.print(f"  Status: {result.get('status', 'N/A')}")
-            
+
         except httpx.ConnectError:
             console.print(f"[red]✗ Could not connect to Holon Engine at {cli_config.host}[/red]")
             console.print("  Is the engine running? Check with: [cyan]holon config get host[/cyan]")
         except httpx.HTTPStatusError as e:
             console.print(f"[red]✗ Deployment failed:[/red] {e.response.status_code}")
             console.print(f"  {e.response.text}")
-        
+
     except ValidationError as e:
         console.print("[red]✗ Configuration validation failed:[/red]")
         for error in e.errors():
@@ -199,39 +184,41 @@ def list(
 ):
     """
     List all deployed Holon processes.
-    
+
     Shows running workflows and their current status.
     """
     cli_config = load_config()
-    
+
     try:
         with console.status("[bold blue]Fetching processes..."):
             response = httpx.get(
                 f"{cli_config.host}/api/v1/processes",
                 params={"all": all},
-                headers={"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {},
+                headers=(
+                    {"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {}
+                ),
                 timeout=10.0,
             )
             response.raise_for_status()
-        
+
         processes = response.json()
-        
+
         if format == "json":
             console.print_json(data=processes)
             return
-        
+
         # Display as table
         if not processes:
             console.print("[yellow]No processes found[/yellow]")
             return
-        
+
         table = Table(title="Holon Processes")
         table.add_column("ID", style="cyan")
         table.add_column("Name", style="green")
         table.add_column("Status", style="yellow")
         table.add_column("Uptime")
         table.add_column("Triggers")
-        
+
         for process in processes:
             table.add_row(
                 process.get("id", "N/A"),
@@ -240,9 +227,9 @@ def list(
                 process.get("uptime", "N/A"),
                 process.get("triggers", "N/A"),
             )
-        
+
         console.print(table)
-        
+
     except httpx.ConnectError:
         console.print(f"[red]✗ Could not connect to Holon Engine at {cli_config.host}[/red]")
     except httpx.HTTPStatusError as e:
@@ -257,16 +244,16 @@ def logs(
 ):
     """
     View logs for a Holon process.
-    
+
     Display execution history and output from workflow steps.
     """
     cli_config = load_config()
-    
+
     try:
         params = {}
         if tail:
             params["tail"] = tail
-        
+
         response = httpx.get(
             f"{cli_config.host}/api/v1/processes/{process_id}/logs",
             params=params,
@@ -274,26 +261,26 @@ def logs(
             timeout=30.0,
         )
         response.raise_for_status()
-        
+
         logs = response.json()
-        
+
         if follow:
             console.print("[yellow]Note: Streaming mode not yet implemented[/yellow]")
-        
+
         for log_entry in logs:
             timestamp = log_entry.get("timestamp", "")
             level = log_entry.get("level", "INFO")
             message = log_entry.get("message", "")
-            
+
             color = {
                 "ERROR": "red",
                 "WARNING": "yellow",
                 "INFO": "blue",
                 "DEBUG": "dim",
             }.get(level, "white")
-            
+
             console.print(f"[dim]{timestamp}[/dim] [{color}]{level}[/{color}] {message}")
-        
+
     except httpx.ConnectError:
         console.print(f"[red]✗ Could not connect to Holon Engine at {cli_config.host}[/red]")
     except httpx.HTTPStatusError as e:
@@ -311,14 +298,14 @@ def event(
 ):
     """
     Trigger an event in a running Holon process.
-    
+
     Manually invoke a workflow step or trigger.
     """
     cli_config = load_config()
-    
+
     # Prepare payload
     payload = {"event": event_name}
-    
+
     if data:
         try:
             payload["data"] = json.loads(data)
@@ -332,21 +319,23 @@ def event(
         except (json.JSONDecodeError, IOError) as e:
             console.print(f"[red]✗ Could not read JSON file:[/red] {e}")
             raise typer.Exit(code=1)
-    
+
     try:
         with console.status(f"[bold blue]Triggering event '{event_name}'..."):
             response = httpx.post(
                 f"{cli_config.host}/api/v1/processes/{process}/events",
                 json=payload,
-                headers={"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {},
+                headers=(
+                    {"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {}
+                ),
                 timeout=30.0,
             )
             response.raise_for_status()
-        
+
         result = response.json()
-        console.print(f"[green]✓ Event triggered successfully[/green]")
+        console.print("[green]✓ Event triggered successfully[/green]")
         console.print(f"  Status: {result.get('status', 'N/A')}")
-        
+
     except httpx.ConnectError:
         console.print(f"[red]✗ Could not connect to Holon Engine at {cli_config.host}[/red]")
     except httpx.HTTPStatusError as e:
@@ -359,22 +348,24 @@ def stop(
 ):
     """
     Stop a running Holon process.
-    
+
     Pauses execution but keeps state.
     """
     cli_config = load_config()
-    
+
     try:
         with console.status(f"[bold blue]Stopping process {process_id}..."):
             response = httpx.post(
                 f"{cli_config.host}/api/v1/processes/{process_id}/stop",
-                headers={"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {},
+                headers=(
+                    {"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {}
+                ),
                 timeout=30.0,
             )
             response.raise_for_status()
-        
+
         console.print(f"[green]✓ Process {process_id} stopped[/green]")
-        
+
     except httpx.ConnectError:
         console.print(f"[red]✗ Could not connect to Holon Engine at {cli_config.host}[/red]")
     except httpx.HTTPStatusError as e:
@@ -388,26 +379,28 @@ def delete(
 ):
     """
     Delete a Holon process.
-    
+
     Removes the process and its configuration permanently.
     """
     if not force:
         if not typer.confirm(f"Are you sure you want to delete process '{process_id}'?"):
             raise typer.Abort()
-    
+
     cli_config = load_config()
-    
+
     try:
         with console.status(f"[bold blue]Deleting process {process_id}..."):
             response = httpx.delete(
                 f"{cli_config.host}/api/v1/processes/{process_id}",
-                headers={"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {},
+                headers=(
+                    {"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {}
+                ),
                 timeout=30.0,
             )
             response.raise_for_status()
-        
+
         console.print(f"[green]✓ Process {process_id} deleted[/green]")
-        
+
     except httpx.ConnectError:
         console.print(f"[red]✗ Could not connect to Holon Engine at {cli_config.host}[/red]")
     except httpx.HTTPStatusError as e:
@@ -450,14 +443,14 @@ def config_set(
 def config_show():
     """Show all configuration values."""
     config = load_config()
-    
+
     table = Table(title="Holon CLI Configuration")
     table.add_column("Key", style="cyan")
     table.add_column("Value", style="green")
-    
+
     for key, value in config.model_dump(exclude_none=True).items():
         table.add_row(key, str(value))
-    
+
     console.print(table)
 
 
