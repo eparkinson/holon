@@ -113,7 +113,7 @@ export function RunDetailView() {
             <div className="space-y-4">
               {traceEvents.map((event, idx) => (
                 <div
-                  key={`${event.step_id}-${idx}`}
+                  key={`${event.step_id}-${event.timestamp}-${idx}`}
                   className="flex items-start space-x-4 border-l-2 border-primary pl-4 py-2"
                 >
                   <div className="flex-1">

@@ -236,7 +236,7 @@ async def get_process_logs(process_id: UUID):
                 import json
 
                 run_data = json.load(f)
-                if run_data.get("project_id") == str(project_id):
+                if run_data.get("project_id") == str(process_id):
                     started_at = run_data.get("started_at")
                     if started_at and (latest_time is None or started_at > latest_time):
                         latest_time = started_at
