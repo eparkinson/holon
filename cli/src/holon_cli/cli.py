@@ -44,7 +44,7 @@ def version_callback(value: bool):
             engine_version = response.json().get("version", "unknown")
             rprint(f"[bold blue]Holon Engine[/bold blue] version [green]{engine_version}[/green]")
         except (httpx.ConnectError, httpx.HTTPStatusError, httpx.TimeoutException):
-            rprint(f"[dim]Holon Engine[/dim] [yellow](not reachable)[/yellow]")
+            rprint("[dim]Holon Engine[/dim] [yellow](not reachable)[/yellow]")
 
         raise typer.Exit()
 
