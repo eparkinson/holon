@@ -208,3 +208,42 @@ async def get_run_logs(run_id: UUID):
         raise HTTPException(status_code=404, detail="Run not found")
 
     return run.trace_events
+
+
+@app.get("/api/v1/processes/{process_id}/logs", response_model=List[TraceEvent])
+async def get_process_logs(process_id: UUID):
+    """Get the trace logs for the most recent run of a process/project."""
+    store = get_persistence()
+    project = store.get_project(process_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Process not found")
+
+    # Find the most recent run for this project
+    # For now, we'll try to find runs by checking the runs directory
+    import os
+
+    runs_dir = store._path("runs")
+    if not store.fs.exists(runs_dir):
+        return []
+
+    run_files = store.fs.glob(f"{runs_dir}/*.json")
+    latest_run = None
+    latest_time = None
+
+    for run_file in run_files:
+        try:
+            with store.fs.open(run_file, "r") as f:
+                import json
+
+                run_data = json.load(f)
+                if run_data.get("project_id") == str(project_id):
+                    started_at = run_data.get("started_at")
+                    if started_at and (latest_time is None or started_at > latest_time):
+                        latest_time = started_at
+                        latest_run = Run(**run_data)
+        except Exception:
+            continue
+
+    if latest_run:
+        return latest_run.trace_events
+    return []
