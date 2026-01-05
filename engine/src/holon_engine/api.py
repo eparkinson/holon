@@ -49,7 +49,7 @@ app = FastAPI(
     title="Holon Engine API",
     description="The control plane API for the Holon Agent Orchestration Engine.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware for development
@@ -66,11 +66,12 @@ app.add_middleware(
 # API Endpoints
 # ============================================================================
 
+
 @app.post("/api/v1/deploy", response_model=DeployResponse, status_code=200)
 async def deploy_project(request: DeployRequest):
     """
     Deploy a Project.
-    
+
     Validates and registers a new HolonDSL configuration.
     """
     session = SessionMaker()
@@ -80,22 +81,21 @@ async def deploy_project(request: DeployRequest):
         try:
             config = workflow_engine.parse_config(request.config_yaml)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid YAML Configuration: {str(e)}")
-        
+            raise HTTPException(
+                status_code=400, detail=f"Invalid YAML Configuration: {str(e)}"
+            )
+
         # Create and store the project
         project = Project(
             id=str(uuid4()),
             name=request.name,
             config_yaml=request.config_yaml,
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
         session.add(project)
         session.commit()
-        
-        return DeployResponse(
-            project_id=UUID(project.id),
-            status="deployed"
-        )
+
+        return DeployResponse(project_id=UUID(project.id), status="deployed")
     finally:
         session.close()
 
@@ -104,29 +104,31 @@ async def deploy_project(request: DeployRequest):
 async def list_projects():
     """
     List Projects.
-    
+
     Returns a list of all deployed projects.
     """
     session = SessionMaker()
     try:
         projects = session.query(Project).order_by(Project.created_at.desc()).all()
         return [
-            ProjectSummary(
-                id=UUID(p.id),
-                name=p.name,
-                created_at=p.created_at
-            )
+            ProjectSummary(id=UUID(p.id), name=p.name, created_at=p.created_at)
             for p in projects
         ]
     finally:
         session.close()
 
 
-@app.post("/api/v1/projects/{project_id}/run", response_model=TriggerRunResponse, status_code=202)
-async def trigger_run(project_id: UUID, request: TriggerRunRequest, background_tasks: BackgroundTasks):
+@app.post(
+    "/api/v1/projects/{project_id}/run",
+    response_model=TriggerRunResponse,
+    status_code=202,
+)
+async def trigger_run(
+    project_id: UUID, request: TriggerRunRequest, background_tasks: BackgroundTasks
+):
     """
     Trigger a Run.
-    
+
     Manually triggers a workflow execution for a specific project.
     """
     session = SessionMaker()
@@ -135,7 +137,7 @@ async def trigger_run(project_id: UUID, request: TriggerRunRequest, background_t
         project = session.query(Project).filter(Project.id == str(project_id)).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
-        
+
         # Create a new run
         run = Run(
             id=str(uuid4()),
@@ -143,18 +145,15 @@ async def trigger_run(project_id: UUID, request: TriggerRunRequest, background_t
             status=RunStatus.PENDING,
             input_context=request.input_context,
             started_at=None,
-            ended_at=None
+            ended_at=None,
         )
         session.add(run)
         session.commit()
-        
+
         # Execute the run in the background
         background_tasks.add_task(execute_run_task, str(run.id), project.config_yaml)
-        
-        return TriggerRunResponse(
-            run_id=UUID(run.id),
-            status=RunStatus.PENDING
-        )
+
+        return TriggerRunResponse(run_id=UUID(run.id), status=RunStatus.PENDING)
     finally:
         session.close()
 
@@ -163,7 +162,7 @@ async def trigger_run(project_id: UUID, request: TriggerRunRequest, background_t
 async def get_run_status(run_id: UUID):
     """
     Get Run Status.
-    
+
     Retrieve the current status and context of a specific run.
     """
     session = SessionMaker()
@@ -171,14 +170,14 @@ async def get_run_status(run_id: UUID):
         run = session.query(Run).filter(Run.id == str(run_id)).first()
         if not run:
             raise HTTPException(status_code=404, detail="Run not found")
-        
+
         return RunDetail(
             id=UUID(run.id),
             project_id=UUID(run.project_id),
             status=run.status,
             context=run.context,
             started_at=run.started_at,
-            ended_at=run.ended_at
+            ended_at=run.ended_at,
         )
     finally:
         session.close()
@@ -188,7 +187,7 @@ async def get_run_status(run_id: UUID):
 async def get_run_logs(run_id: UUID):
     """
     Get Run Logs (Trace).
-    
+
     Retrieve the list of trace events (steps executed) for a run.
     """
     session = SessionMaker()
@@ -196,12 +195,15 @@ async def get_run_logs(run_id: UUID):
         run = session.query(Run).filter(Run.id == str(run_id)).first()
         if not run:
             raise HTTPException(status_code=404, detail="Run not found")
-        
+
         # Get trace events ordered by timestamp
-        trace_events = session.query(DBTraceEvent).filter_by(
-            run_id=run.id
-        ).order_by(DBTraceEvent.timestamp).all()
-        
+        trace_events = (
+            session.query(DBTraceEvent)
+            .filter_by(run_id=run.id)
+            .order_by(DBTraceEvent.timestamp)
+            .all()
+        )
+
         return [
             TraceEvent(
                 step_id=te.step_id,
@@ -209,7 +211,7 @@ async def get_run_logs(run_id: UUID):
                 input=te.input,
                 output=te.output,
                 metrics=te.metrics,
-                timestamp=te.timestamp
+                timestamp=te.timestamp,
             )
             for te in trace_events
         ]
@@ -221,10 +223,11 @@ async def get_run_logs(run_id: UUID):
 # Background Tasks
 # ============================================================================
 
+
 def execute_run_task(run_id: str, config_yaml: str):
     """
     Background task to execute a workflow run.
-    
+
     This runs asynchronously so the API can return immediately.
     """
     session = SessionMaker()
@@ -232,7 +235,7 @@ def execute_run_task(run_id: str, config_yaml: str):
         run = session.query(Run).filter(Run.id == run_id).first()
         if not run:
             return
-        
+
         workflow_engine = WorkflowEngine(session)
         workflow_engine.execute_run(run, config_yaml)
     except Exception as e:
@@ -246,6 +249,7 @@ def execute_run_task(run_id: str, config_yaml: str):
 # Health Check
 # ============================================================================
 
+
 @app.get("/health")
 async def health_check():
     """Simple health check endpoint."""
@@ -256,7 +260,7 @@ async def health_check():
 async def get_version():
     """
     Get Engine Version.
-    
+
     Returns the current version of the Holon Engine.
     """
     return VersionResponse(version=__version__)

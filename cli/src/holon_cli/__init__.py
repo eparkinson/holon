@@ -3,6 +3,7 @@
 import yaml
 from pathlib import Path
 
+
 def _load_version():
     """Load version from conf.yaml."""
     conf_path = Path(__file__).parent.parent.parent / "conf.yaml"
@@ -12,5 +13,6 @@ def _load_version():
             return config.get("version", "0.1.0")
     except Exception:
         return "0.1.0"
+
 
 __version__ = _load_version()
