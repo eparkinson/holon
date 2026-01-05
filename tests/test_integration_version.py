@@ -10,6 +10,9 @@ import time
 import os
 import signal
 import sys
+import json
+import httpx
+import yaml
 from pathlib import Path
 
 
@@ -40,7 +43,6 @@ def test_holon_version_integration():
         for _ in range(max_wait * 2):  # Check every 0.5 seconds
             time.sleep(0.5)
             try:
-                import httpx
                 response = httpx.get("http://127.0.0.1:8000/health", timeout=1.0)
                 if response.status_code == 200:
                     break
@@ -58,12 +60,11 @@ def test_holon_version_integration():
         # Configure the CLI to point to the local engine
         holon_config_dir = Path.home() / ".holon"
         holon_config_dir.mkdir(exist_ok=True)
-        config_file = holon_config_dir / "config.json"
+        config_file = holon_config_dir / "config.yaml"
         
-        import json
         config_data = {"host": "http://127.0.0.1:8000"}
         with open(config_file, "w") as f:
-            json.dump(config_data, f)
+            yaml.dump(config_data, f)
         
         # Run the holon --version command
         env = os.environ.copy()
