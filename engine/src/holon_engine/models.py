@@ -187,6 +187,28 @@ class TraceEvent(BaseModel):
     timestamp: datetime
 
 
+class Project(BaseModel):
+    """Storage model for a deployed project."""
+
+    id: UUID
+    name: str
+    config_yaml: str
+    created_at: datetime
+
+
+class Run(BaseModel):
+    """Storage model for a workflow run."""
+
+    id: UUID
+    project_id: UUID
+    status: RunStatus
+    context: Optional[Dict[str, Any]] = Field(default=None)  # Blackboard state
+    input_context: Optional[Dict[str, Any]] = Field(default=None)
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+    trace_events: List[TraceEvent] = Field(default_factory=list)
+
+
 class VersionResponse(BaseModel):
     """Response for GET /version."""
 

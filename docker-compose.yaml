@@ -5,9 +5,9 @@ services:
       - "8000:8000"
     volumes:
       - ./engine/src:/app/src
-      - ./holon.db:/app/holon.db
+      - ./holon_data:/app/holon_data
     environment:
-      - DATABASE_URL=sqlite:///./holon.db
+      - HOLON_STORAGE_URI=file:///app/holon_data
 
   web:
     build: ./web

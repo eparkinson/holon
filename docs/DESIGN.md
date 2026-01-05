@@ -14,7 +14,7 @@
 | **CLI Framework** | **Typer** | Modern, type-safe CLI builder. Excellent developer experience. |
 | **API / Backend** | **FastAPI** | High-performance web framework. Native Pydantic integration for schema validation and auto-generated docs. |
 | **Configuration** | **Pydantic** | Strict schema validation for `holon.yaml` files. |
-| **State Store** | **SQLite** | Simple, file-based persistence for process state and history. |
+| **State Store** | **Object Storage** | `fsspec` based storage (Local Filesystem or S3) for portability and cloud-native persistence. |
 | **Dashboard UI** | **React + DeepChat** | Standalone SPA for monitoring. Uses DeepChat component for the embedded chat interface. |
 
 ---
@@ -36,7 +36,7 @@ To keep the MVP simple, the core engine will run synchronously.
 ### 2.2 Data Flow
 
 1.  **CLI** sends a `holon.yaml` to the **API**.
-2.  **API** parses it with **Pydantic** and stores the definition in **SQLite**.
+2.  **API** parses it with **Pydantic** and stores the definition in **Object Storage** (JSON).
 3.  When **Triggered**:
     *   The **Engine** loads the workflow definition.
     *   It iterates through the `steps`.
@@ -66,7 +66,7 @@ sequenceDiagram
 ```
 
 ### 3.2 Holon Engine
-*   **Stack:** Python, FastAPI, SQLite, Pydantic.
+*   **Stack:** Python, FastAPI, Object Storage (fsspec), Pydantic.
 *   **Role:** A dynamic runtime interpreter that executes HolonDSL configurations. It acts less like a static job runner and more like a virtual machine for agentic workflows.
 *   **Design:**
     *   **DSL Parser:** Ingests `holon.yaml` and compiles it into an execution graph (DAG).
