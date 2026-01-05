@@ -17,6 +17,41 @@ Holon treats AI models not as text generators that need to be micromanaged with 
 
 ---
 
+## 🚀 Local Development
+
+Get Holon up and running on your local machine quickly.
+
+### Prerequisites
+
+*   **Docker & Docker Compose**
+*   **Linux/WSL, MacOS** (Windows support coming soon)
+
+### Quick Start
+
+1.  **Start the Platform:**
+    This script bootstraps the Engine and Web Dashboard in Docker containers.
+
+    ```bash
+    ./scripts/run_local.sh
+    ```
+
+    Once started:
+    *   **Web Dashboard:** [http://localhost:3000](http://localhost:3000)
+    *   **API Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+
+2.  **Use the CLI:**
+    We provide a wrapper script that handles the Python environment for you.
+
+    ```bash
+    # Check version
+    ./scripts/holon_local.sh --version
+
+    # List available commands
+    ./scripts/holon_local.sh --help
+    ```
+
+---
+
 ## ⚡ The Shift
 
 | The Old Way (Legacy Frameworks) | The Holon Way (Federated Architecture) |

@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  engine:
+    build: ./engine
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./engine/src:/app/src
+      - ./holon.db:/app/holon.db
+    environment:
+      - DATABASE_URL=sqlite:///./holon.db
+
+  web:
+    build: ./web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web/src:/app/src
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
