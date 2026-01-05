@@ -27,7 +27,25 @@ console = Console()
 def version_callback(value: bool):
     """Display version and exit."""
     if value:
+        # Display CLI version
         rprint(f"[bold blue]Holon CLI[/bold blue] version [green]{__version__}[/green]")
+
+        # Try to get engine version from API
+        try:
+            cli_config = load_config()
+            response = httpx.get(
+                f"{cli_config.host}/api/v1/version",
+                headers=(
+                    {"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {}
+                ),
+                timeout=5.0,
+            )
+            response.raise_for_status()
+            engine_version = response.json().get("version", "unknown")
+            rprint(f"[bold blue]Holon Engine[/bold blue] version [green]{engine_version}[/green]")
+        except (httpx.ConnectError, httpx.HTTPStatusError, httpx.TimeoutException):
+            rprint("[dim]Holon Engine[/dim] [yellow](not reachable)[/yellow]")
+
         raise typer.Exit()
 
 
