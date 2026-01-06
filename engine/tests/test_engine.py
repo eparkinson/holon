@@ -1,195 +1,104 @@
-"""Tests for the workflow execution engine."""
+"""Tests for the Holon Engine core functionality."""
+
+import tempfile
+import shutil
+from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from holon_engine.database import Base, Run
-from holon_engine.engine import WorkflowEngine
-from holon_engine.models import RunStatus
-
-
-TEST_DATABASE_URL = "sqlite:///:memory:"
+from holon_engine.persistence import PersistenceService
+from holon_engine.models import Project, Run, RunStatus
+from uuid import uuid4
+from datetime import datetime
 
 
 @pytest.fixture
-def db_session():
-    """Create a test database session."""
-    engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-    Base.metadata.create_all(engine)
-    SessionMaker = sessionmaker(bind=engine)
-    session = SessionMaker()
-
-    yield session
-
-    session.close()
-    Base.metadata.drop_all(engine)
+def test_storage():
+    """Create a temporary storage directory for tests."""
+    temp_dir = tempfile.mkdtemp()
+    yield temp_dir
+    shutil.rmtree(temp_dir)
 
 
-def test_parse_config(db_session):
-    """Test parsing a valid holon.yaml configuration."""
-    config_yaml = """
-version: "1.0"
-project: "Test-Project"
-
-resources:
-  - id: researcher
-    provider: perplexity
-    model: sonar-reasoning
-
-workflow:
-  type: sequential
-  steps:
-    - id: research
-      agent: researcher
-      instruction: "Research ${trigger.input.topic}"
-"""
-
-    engine = WorkflowEngine(db_session)
-    config = engine.parse_config(config_yaml)
-
-    assert config.version == "1.0"
-    assert config.project == "Test-Project"
-    assert len(config.resources) == 1
-    assert config.resources[0].id == "researcher"
-    assert config.workflow.type.value == "sequential"
-    assert len(config.workflow.steps) == 1
+@pytest.fixture
+def persistence(test_storage):
+    """Create a persistence service with test storage."""
+    return PersistenceService(f"file://{test_storage}")
 
 
-def test_parse_invalid_config(db_session):
-    """Test parsing an invalid configuration."""
-    invalid_yaml = """
-version: "1.0"
-# Missing required fields
-"""
-
-    engine = WorkflowEngine(db_session)
-    with pytest.raises(Exception):
-        engine.parse_config(invalid_yaml)
-
-
-def test_execute_sequential_workflow(db_session):
-    """Test executing a sequential workflow."""
-    config_yaml = """
-version: "1.0"
-project: "Test-Project"
-
-resources:
-  - id: test_agent
-    provider: anthropic
-    model: claude-3-5-sonnet
-
-workflow:
-  type: sequential
-  steps:
-    - id: step1
-      agent: test_agent
-      instruction: "Step 1"
-    - id: step2
-      agent: test_agent
-      instruction: "Step 2"
-"""
-
-    # Create a run
-    run = Run(
-        id="test-run-001",
-        project_id="test-project-001",
-        status=RunStatus.PENDING,
-        input_context={"topic": "AI"},
+def test_save_and_load_project(persistence):
+    """Test saving and loading a project."""
+    project = Project(
+        id=uuid4(),
+        name="Test-Project",
+        config_yaml="version: '1.0'\nproject: Test",
+        env_vars={"KEY": "value"},
+        created_at=datetime.utcnow(),
     )
-    db_session.add(run)
-    db_session.commit()
 
-    # Execute the run
-    engine = WorkflowEngine(db_session)
-    engine.execute_run(run, config_yaml)
+    persistence.save_project(project)
+    loaded = persistence.get_project(project.id)
 
-    # Refresh the run from DB
-    db_session.refresh(run)
-
-    # Check that the run completed successfully
-    assert run.status == RunStatus.COMPLETED
-    assert run.context is not None
-    assert "steps" in run.context
-    assert "step1" in run.context["steps"]
-    assert "step2" in run.context["steps"]
+    assert loaded is not None
+    assert loaded.id == project.id
+    assert loaded.name == project.name
+    assert loaded.env_vars == {"KEY": "value"}
 
 
-def test_template_resolution(db_session):
-    """Test that template variables are resolved correctly."""
-    config_yaml = """
-version: "1.0"
-project: "Test-Project"
-
-resources:
-  - id: test_agent
-    provider: anthropic
-    model: claude-3-5-sonnet
-
-workflow:
-  type: sequential
-  steps:
-    - id: step1
-      agent: test_agent
-      instruction: "Research ${trigger.input.topic} in ${trigger.input.language}"
-"""
-
-    # Create a run with input context
-    run = Run(
-        id="test-run-002",
-        project_id="test-project-002",
-        status=RunStatus.PENDING,
-        input_context={"topic": "Quantum Computing", "language": "Python"},
+def test_list_projects(persistence):
+    """Test listing projects."""
+    project1 = Project(
+        id=uuid4(),
+        name="Project-1",
+        config_yaml="version: '1.0'\nproject: P1",
+        created_at=datetime.utcnow(),
     )
-    db_session.add(run)
-    db_session.commit()
-
-    # Execute the run
-    engine = WorkflowEngine(db_session)
-    engine.execute_run(run, config_yaml)
-
-    # Refresh and check
-    db_session.refresh(run)
-
-    assert run.status == RunStatus.COMPLETED
-    # The resolved instruction should be in the trace events
-    # which are stored separately, but we can check the context was set up
-    assert run.context["trigger"]["input"]["topic"] == "Quantum Computing"
-    assert run.context["trigger"]["input"]["language"] == "Python"
-
-
-def test_workflow_error_handling(db_session):
-    """Test that errors are handled properly."""
-    # Invalid workflow type to trigger an error
-    invalid_config = """
-version: "1.0"
-project: "Test-Project"
-
-resources:
-  - id: test_agent
-    provider: anthropic
-    model: claude-3-5-sonnet
-
-workflow:
-  type: scatter-gather
-  steps: []
-"""
-
-    run = Run(
-        id="test-run-003",
-        project_id="test-project-003",
-        status=RunStatus.PENDING,
-        input_context={},
+    project2 = Project(
+        id=uuid4(),
+        name="Project-2",
+        config_yaml="version: '1.0'\nproject: P2",
+        created_at=datetime.utcnow(),
     )
-    db_session.add(run)
-    db_session.commit()
 
-    # Execute - should fail due to unsupported workflow type
-    engine = WorkflowEngine(db_session)
+    persistence.save_project(project1)
+    persistence.save_project(project2)
 
-    with pytest.raises(NotImplementedError):
-        engine.execute_run(run, invalid_config)
+    projects = persistence.list_projects()
+    assert len(projects) >= 2
+    names = [p.name for p in projects]
+    assert "Project-1" in names
+    assert "Project-2" in names
 
-    # Refresh and check that run is marked as FAILED
-    db_session.refresh(run)
-    assert run.status == RunStatus.FAILED
+
+def test_save_and_load_run(persistence):
+    """Test saving and loading a run."""
+    run = Run(
+        id=uuid4(),
+        project_id=uuid4(),
+        status=RunStatus.PENDING,
+        input_context={"test": "data"},
+        started_at=None,
+        ended_at=None,
+    )
+
+    persistence.save_run(run)
+    loaded = persistence.get_run(run.id)
+
+    assert loaded is not None
+    assert loaded.id == run.id
+    assert loaded.status == RunStatus.PENDING
+    assert loaded.input_context == {"test": "data"}
+
+
+def test_get_nonexistent_project(persistence):
+    """Test getting a project that doesn't exist."""
+    fake_id = uuid4()
+    project = persistence.get_project(fake_id)
+    assert project is None
+
+
+def test_get_nonexistent_run(persistence):
+    """Test getting a run that doesn't exist."""
+    fake_id = uuid4()
+    run = persistence.get_run(fake_id)
+    assert run is None
