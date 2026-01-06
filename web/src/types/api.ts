@@ -1,12 +1,12 @@
 // API Types based on OpenAPI spec
 
-export interface ProjectSummary {
+export interface ProcessSummary {
   id: string;
   name: string;
   created_at: string;
 }
 
-export interface Project extends ProjectSummary {
+export interface Process extends ProcessSummary {
   config_yaml: string;
 }
 

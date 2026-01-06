@@ -29,10 +29,14 @@ Get Holon up and running on your local machine quickly.
 ### Quick Start
 
 1.  **Start the Platform:**
-    This script bootstraps the Engine and Web Dashboard in Docker containers.
+    This script bootstraps the Engine and Web Dashboard. By default, it runs them locally (using `uv` and `pnpm`) for a fast development loop.
 
     ```bash
+    # Start in Local Mode (Default)
     ./scripts/start_local.sh
+
+    # Start in Docker Mode
+    ./scripts/start_local.sh --docker
     ```
 
     Once started:

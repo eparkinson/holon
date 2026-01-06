@@ -1,48 +1,48 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { ProjectsView } from '@/views/ProjectsView';
+import { ProcesssView } from '@/views/ProcesssView';
 import { apiClient } from '@/services/api';
 
 // Mock the API client
 vi.mock('@/services/api', () => ({
   apiClient: {
-    listProjects: vi.fn(),
+    listProcesss: vi.fn(),
     triggerRun: vi.fn(),
   },
 }));
 
-describe('ProjectsView', () => {
+describe('ProcesssView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders projects title', () => {
-    vi.mocked(apiClient.listProjects).mockResolvedValue([]);
+  it('renders processes title', () => {
+    vi.mocked(apiClient.listProcesss).mockResolvedValue([]);
     
     render(
       <BrowserRouter>
-        <ProjectsView />
+        <ProcesssView />
       </BrowserRouter>
     );
     
-    expect(screen.getByText('Projects')).toBeInTheDocument();
+    expect(screen.getByText('Processs')).toBeInTheDocument();
   });
 
   it('shows loading state initially', () => {
-    vi.mocked(apiClient.listProjects).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(apiClient.listProcesss).mockImplementation(() => new Promise(() => {}));
     
     render(
       <BrowserRouter>
-        <ProjectsView />
+        <ProcesssView />
       </BrowserRouter>
     );
     
-    expect(screen.getByText('Loading projects...')).toBeInTheDocument();
+    expect(screen.getByText('Loading processes...')).toBeInTheDocument();
   });
 
-  it('shows projects when available', async () => {
-    const mockProjects = [
+  it('shows processes when available', async () => {
+    const mockProcesss = [
       {
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Daily Market Briefing',
@@ -50,11 +50,11 @@ describe('ProjectsView', () => {
       },
     ];
     
-    vi.mocked(apiClient.listProjects).mockResolvedValue(mockProjects);
+    vi.mocked(apiClient.listProcesss).mockResolvedValue(mockProcesss);
     
     render(
       <BrowserRouter>
-        <ProjectsView />
+        <ProcesssView />
       </BrowserRouter>
     );
     
@@ -63,31 +63,31 @@ describe('ProjectsView', () => {
     });
   });
 
-  it('shows empty state when no projects', async () => {
-    vi.mocked(apiClient.listProjects).mockResolvedValue([]);
+  it('shows empty state when no processes', async () => {
+    vi.mocked(apiClient.listProcesss).mockResolvedValue([]);
     
     render(
       <BrowserRouter>
-        <ProjectsView />
+        <ProcesssView />
       </BrowserRouter>
     );
     
     await waitFor(() => {
-      expect(screen.getByText('No projects yet')).toBeInTheDocument();
+      expect(screen.getByText('No processes yet')).toBeInTheDocument();
     });
   });
 
   it('shows error state when API fails', async () => {
-    vi.mocked(apiClient.listProjects).mockRejectedValue(new Error('Network error'));
+    vi.mocked(apiClient.listProcesss).mockRejectedValue(new Error('Network error'));
     
     render(
       <BrowserRouter>
-        <ProjectsView />
+        <ProcesssView />
       </BrowserRouter>
     );
     
     await waitFor(() => {
-      expect(screen.getByText(/Error loading projects/)).toBeInTheDocument();
+      expect(screen.getByText(/Error loading processes/)).toBeInTheDocument();
     });
   });
 });

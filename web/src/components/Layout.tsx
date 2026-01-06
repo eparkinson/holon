@@ -4,7 +4,7 @@ import { LayoutDashboard, FolderKanban, MessageSquare, Github } from 'lucide-rea
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Projects', href: '/projects', icon: FolderKanban },
+  { name: 'Processes', href: '/processes', icon: FolderKanban },
   { name: 'Chat', href: '/chat', icon: MessageSquare },
 ];
 

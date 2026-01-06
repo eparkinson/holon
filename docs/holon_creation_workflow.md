@@ -9,7 +9,7 @@ This guide details the developer process for creating, deploying, monitoring, an
 Before creating a new Holon, ensure your local environment is running.
 
 1.  **Start the Local Platform**
-    Use the provided script to spin up the Engine, database, and Web Dashboard.
+    Use the provided script to spin up the Engine and Web Dashboard.
 
     ```bash
     ./scripts/start_local.sh

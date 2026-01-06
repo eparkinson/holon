@@ -1,5 +1,6 @@
 import type {
-  ProjectSummary,
+  Process,
+  ProcessSummary,
   RunDetail,
   TraceEvent,
   DeployRequest,
@@ -31,15 +32,19 @@ class ApiClient {
     return response.json();
   }
 
-  async deployProject(data: DeployRequest): Promise<DeployResponse> {
+  async deployProcess(data: DeployRequest): Promise<DeployResponse> {
     return this.request<DeployResponse>('/deploy', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async listProjects(): Promise<ProjectSummary[]> {
-    return this.request<ProjectSummary[]>('/projects');
+  async listProcesses(): Promise<ProcessSummary[]> {
+    return this.request<ProcessSummary[]>('/projects');
+  }
+
+  async getProcess(projectId: string): Promise<Process> {
+    return this.request<Process>(`/projects/${projectId}`);
   }
 
   async triggerRun(

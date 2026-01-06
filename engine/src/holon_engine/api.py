@@ -153,6 +153,17 @@ async def list_processes():
     return processes
 
 
+@app.get("/api/v1/projects/{project_id}", response_model=Project)
+async def get_project(project_id: UUID):
+    """Get details of a specific project."""
+    store = get_persistence()
+    project = store.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return project
+
+
 @app.post(
     "/api/v1/projects/{project_id}/run",
     response_model=TriggerRunResponse,

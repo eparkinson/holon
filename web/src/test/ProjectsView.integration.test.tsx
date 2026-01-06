@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { ProjectsView } from '@/views/ProjectsView';
+import { ProcesssView } from '@/views/ProcesssView';
 
 /**
- * Integration test for ProjectsView that calls the real API.
+ * Integration test for ProcesssView that calls the real API.
  * 
  * This test requires a running Holon Engine API server.
  * It validates that the web dashboard can successfully:
- * 1. Fetch deployed projects from the API
+ * 1. Fetch deployed processes from the API
  * 2. Display them in the UI
  * 
  * To run this test, start the engine first:
@@ -20,14 +20,14 @@ import { ProjectsView } from '@/views/ProjectsView';
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 const INTEGRATION_TEST_ENABLED = process.env.VITE_INTEGRATION_TEST === 'true';
 
-describe.skipIf(!INTEGRATION_TEST_ENABLED)('ProjectsView Integration', () => {
-  let testProjectId: string | null = null;
+describe.skipIf(!INTEGRATION_TEST_ENABLED)('ProcesssView Integration', () => {
+  let testProcessId: string | null = null;
 
   beforeAll(async () => {
     // Deploy a test project via API
     const config_yaml = `
 version: "1.0"
-project: "Integration-Test-Project"
+project: "Integration-Test-Process"
 
 resources:
   - id: test_agent
@@ -49,14 +49,14 @@ workflow:
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: 'Integration-Test-Project',
+          name: 'Integration-Test-Process',
           config_yaml,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        testProjectId = data.project_id;
+        testProcessId = data.project_id;
       }
     } catch (error) {
       console.warn('Failed to deploy test project:', error);
@@ -66,9 +66,9 @@ workflow:
   afterAll(async () => {
     // Clean up: delete the test project if needed
     // Note: This would require a delete endpoint in the API
-    if (testProjectId) {
+    if (testProcessId) {
       try {
-        await fetch(`${API_BASE_URL}/projects/${testProjectId}`, {
+        await fetch(`${API_BASE_URL}/processes/${testProcessId}`, {
           method: 'DELETE',
         });
       } catch (error) {
@@ -77,21 +77,21 @@ workflow:
     }
   });
 
-  it('fetches and displays deployed projects from the API', async () => {
+  it('fetches and displays deployed processes from the API', async () => {
     render(
       <BrowserRouter>
-        <ProjectsView />
+        <ProcesssView />
       </BrowserRouter>
     );
 
     // Initially shows loading state
-    expect(screen.getByText('Loading projects...')).toBeInTheDocument();
+    expect(screen.getByText('Loading processes...')).toBeInTheDocument();
 
-    // Wait for projects to load
+    // Wait for processes to load
     await waitFor(
       () => {
         // Should show the test project we deployed
-        expect(screen.getByText('Integration-Test-Project')).toBeInTheDocument();
+        expect(screen.getByText('Integration-Test-Process')).toBeInTheDocument();
       },
       { timeout: 5000 }
     );
@@ -101,26 +101,26 @@ workflow:
     expect(screen.getByText(/ID:/)).toBeInTheDocument();
   }, 10000); // 10 second timeout for integration test
 
-  it('shows empty state when no projects exist', async () => {
+  it('shows empty state when no processes exist', async () => {
     // This test assumes a clean state or uses a mock
-    // For a true integration test, you'd need to ensure the API has no projects
+    // For a true integration test, you'd need to ensure the API has no processes
     // or point to a different test endpoint
     
     render(
       <BrowserRouter>
-        <ProjectsView />
+        <ProcesssView />
       </BrowserRouter>
     );
 
     await waitFor(
       () => {
-        // If there are projects, this will fail
-        // If no projects, should show empty state
-        const emptyState = screen.queryByText('No projects yet');
-        const hasProjects = screen.queryByText('Integration-Test-Project');
+        // If there are processes, this will fail
+        // If no processes, should show empty state
+        const emptyState = screen.queryByText('No processes yet');
+        const hasProcesss = screen.queryByText('Integration-Test-Process');
         
         // At least one should be present
-        expect(emptyState || hasProjects).toBeTruthy();
+        expect(emptyState || hasProcesss).toBeTruthy();
       },
       { timeout: 5000 }
     );
