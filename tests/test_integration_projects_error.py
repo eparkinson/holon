@@ -131,7 +131,10 @@ workflow:
         # Test 3: Create a corrupt JSON file to test error handling
         print("\n=== Test 3: Corrupt project file ===")
         corrupt_id = uuid4()
-        corrupt_file = test_data_dir / "projects" / f"{corrupt_id}.json"
+        # Ensure projects directory exists
+        projects_dir = test_data_dir / "projects"
+        projects_dir.mkdir(parents=True, exist_ok=True)
+        corrupt_file = projects_dir / f"{corrupt_id}.json"
         with open(corrupt_file, "w") as f:
             f.write("{ invalid json syntax")
 

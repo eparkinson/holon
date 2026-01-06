@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime
 from typing import List, Optional
@@ -8,6 +9,10 @@ import fsspec
 from pydantic import ValidationError
 
 from .models import Project, Run
+
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class PersistenceService:
@@ -65,8 +70,9 @@ class PersistenceService:
         # fsspec's fs.glob usually returns paths relative to fs root or absolute paths
         try:
             files = self.fs.glob(f"{projects_dir}/*.json")
-        except Exception:
-            # If glob fails for any reason, return empty list
+        except (OSError, IOError, PermissionError) as e:
+            # If glob fails due to filesystem errors, return empty list
+            logger.error(f"Failed to glob projects directory: {e}")
             return []
 
         projects = []
@@ -86,8 +92,9 @@ class PersistenceService:
                 key=lambda p: p.created_at or datetime.min,
                 reverse=True,
             )
-        except Exception:
-            # If sorting fails for any reason, return unsorted list
+        except (TypeError, AttributeError) as e:
+            # If sorting fails due to type errors, return unsorted list
+            logger.warning(f"Failed to sort projects by created_at: {e}")
             return projects
 
     def save_run(self, run: Run):
