@@ -1,0 +1,185 @@
+version: "1.0"
+project: "Code-Review-Debate"
+
+# 1. TRIGGER: Webhook receiving code submission
+trigger:
+  type: webhook
+  route: "/api/v1/code-review"
+  method: POST
+  auth_token: ${WEBHOOK_AUTH_TOKEN}
+  schema:
+    pull_request_url: "string"
+    code_diff: "string"
+    language: "string"
+    author: "string"
+    description: "string"
+
+# 2. RESOURCES: Builder and Critic Agents (Debate Pattern)
+resources:
+  # The Builder: Optimistic, focuses on improvements
+  - id: code_builder
+    provider: anthropic
+    model: claude-3-5-sonnet
+    system_prompt: |
+      You are a Senior Software Engineer reviewing code.
+      Your role is to be CONSTRUCTIVE and IMPROVEMENT-FOCUSED.
+      
+      When reviewing code:
+      - Acknowledge what's done well
+      - Suggest specific improvements with examples
+      - Focus on readability, maintainability, and best practices
+      - Provide alternative implementations when relevant
+      - Be encouraging but honest
+      
+      Format suggestions as actionable items with code snippets.
+
+  # The Critic: Skeptical, focuses on finding issues
+  - id: security_critic
+    provider: anthropic
+    model: claude-3-5-sonnet
+    system_prompt: |
+      You are a Security-Focused Code Auditor.
+      Your role is to be SKEPTICAL and ISSUE-FOCUSED.
+      
+      When reviewing code:
+      - Identify security vulnerabilities (injection, XSS, auth issues, etc.)
+      - Find edge cases and error handling gaps
+      - Spot performance bottlenecks
+      - Flag code smells and anti-patterns
+      - Question assumptions
+      
+      Be direct and specific. Cite CVE references when applicable.
+
+  # The Judge: Synthesizes both perspectives
+  - id: tech_lead
+    provider: anthropic
+    model: claude-3-5-sonnet
+    system_prompt: |
+      You are a Technical Lead making final decisions on code reviews.
+      
+      Your role:
+      - Synthesize feedback from Builder and Critic
+      - Make judgment calls on what's critical vs. nice-to-have
+      - Provide clear APPROVE / REQUEST_CHANGES / COMMENT decision
+      - Create prioritized action items
+      
+      Be balanced, fair, and decisive.
+
+# 3. WORKFLOW: Iterative Debate Pattern
+workflow:
+  type: sequential
+  steps:
+    # Round 1: Initial parallel review
+    - id: initial_review
+      type: scatter-gather
+      parallel_tasks:
+        - id: builder_review
+          agent: code_builder
+          instruction: |
+            Review this code submission:
+            
+            LANGUAGE: {trigger.payload.language}
+            AUTHOR: {trigger.payload.author}
+            DESCRIPTION: {trigger.payload.description}
+            
+            CODE DIFF:
+            ```
+            {trigger.payload.code_diff}
+            ```
+            
+            Provide your constructive review focusing on improvements.
+        
+        - id: critic_review
+          agent: security_critic
+          instruction: |
+            Audit this code submission for security and correctness:
+            
+            LANGUAGE: {trigger.payload.language}
+            
+            CODE DIFF:
+            ```
+            {trigger.payload.code_diff}
+            ```
+            
+            Identify all potential issues, vulnerabilities, and risks.
+    
+    # Round 2: Builder responds to Critic's concerns
+    - id: builder_rebuttal
+      agent: code_builder
+      inputs: [critic_review.output]
+      instruction: |
+        The Security Critic raised these concerns:
+        {critic_review.output}
+        
+        Original code:
+        ```
+        {trigger.payload.code_diff}
+        ```
+        
+        Respond to the Critic's points:
+        - Which concerns are valid and should be addressed?
+        - Which concerns are overstated or not applicable?
+        - Provide code fixes for valid security issues
+    
+    # Round 3: Critic evaluates Builder's response
+    - id: critic_evaluation
+      agent: security_critic
+      inputs: [builder_rebuttal.output]
+      instruction: |
+        The Builder provided this response to your concerns:
+        {builder_rebuttal.output}
+        
+        Evaluate:
+        - Are the proposed fixes adequate?
+        - Are there still unresolved issues?
+        - Any new concerns introduced by the fixes?
+    
+    # Final: Tech Lead makes decision
+    - id: final_decision
+      agent: tech_lead
+      inputs: [initial_review.results, builder_rebuttal.output, critic_evaluation.output]
+      instruction: |
+        You have received a complete code review debate:
+        
+        BUILDER'S INITIAL REVIEW:
+        {builder_review.output}
+        
+        CRITIC'S INITIAL REVIEW:
+        {critic_review.output}
+        
+        BUILDER'S REBUTTAL:
+        {builder_rebuttal.output}
+        
+        CRITIC'S EVALUATION:
+        {critic_evaluation.output}
+        
+        ORIGINAL CODE:
+        ```
+        {trigger.payload.code_diff}
+        ```
+        
+        Provide your final decision in this format:
+        
+        DECISION: [APPROVE | REQUEST_CHANGES | COMMENT]
+        
+        CRITICAL ISSUES (must fix):
+        - [List critical items]
+        
+        RECOMMENDED IMPROVEMENTS (nice to have):
+        - [List recommendations]
+        
+        APPROVED SUGGESTIONS:
+        - [What Builder got right]
+        
+        SUMMARY:
+        [2-3 sentence summary for the PR author]
+    
+    # Post the review to the PR
+    - id: post_review
+      type: action
+      action: github.post_review
+      params:
+        pr_url: ${trigger.payload.pull_request_url}
+        decision: ${final_decision.decision}
+        body: ${final_decision.output}
+        comments: ${final_decision.line_comments}

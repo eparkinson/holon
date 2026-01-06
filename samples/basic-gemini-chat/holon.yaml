@@ -1,0 +1,33 @@
+version: "1.0"
+project: "Basic-Gemini-Chat"
+
+# 1. TRIGGER: Web Chat Interface (Sandbox)
+trigger:
+  type: websocket
+  # Allow connections from the Holon web dashboard
+  cors: ["http://localhost:3000", "https://*.holon.app"]
+  # Direct interaction mode - no predefined workflow path
+  mode: "interactive"
+
+# 2. RESOURCES: Single Gemini Agent
+resources:
+  - id: gemini_assistant
+    provider: gemini
+    model: gemini-1.5-pro
+    # System context for the chat assistant
+    system_prompt: |
+      You are a helpful AI assistant powered by Google Gemini.
+      Provide clear, concise, and accurate responses to user queries.
+      If you don't know something, admit it. Always be respectful and professional.
+
+# 3. WORKFLOW: Simple chat interaction
+workflow:
+  type: sequential
+  steps:
+    - id: chat_response
+      agent: gemini_assistant
+      # The user's message from the chat interface
+      instruction: |
+        User Message: "{trigger.message}"
+        
+        Respond naturally and helpfully to the user's query.
