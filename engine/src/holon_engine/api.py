@@ -96,12 +96,19 @@ async def deploy_project(request: DeployRequest):
 @app.get("/api/v1/projects", response_model=List[ProjectSummary])
 async def list_projects():
     """List all deployed projects."""
-    store = get_persistence()
-    projects = store.list_projects()
+    try:
+        store = get_persistence()
+        projects = store.list_projects()
 
-    return [
-        ProjectSummary(id=p.id, name=p.name, created_at=p.created_at) for p in projects
-    ]
+        return [
+            ProjectSummary(id=p.id, name=p.name, created_at=p.created_at)
+            for p in projects
+        ]
+    except Exception as e:
+        logger.error(f"Failed to list projects: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to list projects: {str(e)}"
+        )
 
 
 @app.get("/api/v1/processes", response_model=List[ProcessSummary])
