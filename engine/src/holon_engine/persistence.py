@@ -86,6 +86,7 @@ class PersistenceService:
                 continue
 
         # Safely sort projects by created_at, handling None values
+        # Projects with None created_at use datetime.min to appear last in the list
         try:
             return sorted(
                 projects,
