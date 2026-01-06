@@ -1,0 +1,78 @@
+version: "1.0"
+project: "Slack-Gemini-Assistant"
+
+# 1. TRIGGER: Slack Chat Interface
+trigger:
+  type: adapter
+  platform: slack
+  # Can be a specific channel or direct messages
+  channel: "#ai-assistant"
+  # How the bot should respond
+  mode: "mention" # Options: "mention" (only when @bot is used), "direct_message", "all"
+  # Slack-specific configuration
+  config:
+    # Bot will respond when mentioned with @BotName
+    respond_to_mentions: true
+    # Also respond to direct messages
+    respond_to_dms: true
+    # Thread responses to keep conversations organized
+    use_threads: true
+    # Show typing indicator while processing
+    typing_indicator: true
+
+# 2. RESOURCES: Gemini Assistant
+resources:
+  - id: gemini_assistant
+    provider: gemini
+    model: gemini-1.5-pro
+    system_prompt: |
+      You are a helpful AI assistant integrated into Slack.
+      
+      Context:
+      - You are chatting with team members in their work environment
+      - Keep responses professional but friendly
+      - Use Slack formatting (bold with *, italics with _, code with `)
+      - If asked to do something beyond chat, politely explain your capabilities
+      
+      Capabilities:
+      - Answer questions about various topics
+      - Help with brainstorming and problem-solving
+      - Provide explanations and summaries
+      - Assist with writing and editing
+      
+      Guidelines:
+      - Be concise - Slack users prefer shorter messages
+      - Use bullet points for lists
+      - If the response is long, offer to break it into parts
+      - Reference the user by their Slack display name when appropriate
+
+# 3. WORKFLOW: Interactive Slack Chat
+workflow:
+  type: sequential
+  steps:
+    - id: process_message
+      agent: gemini_assistant
+      instruction: |
+        Slack Channel: {trigger.channel}
+        User: {trigger.user.display_name} (@{trigger.user.username})
+        Message: {trigger.message}
+        
+        {% if trigger.thread_context %}
+        Previous Thread Messages:
+        {trigger.thread_context}
+        {% endif %}
+        
+        Respond to the user's message. Remember you are in a Slack workspace.
+        Use appropriate Slack markdown formatting.
+    
+    # Optional: Log interaction for analytics
+    - id: log_interaction
+      type: action
+      action: analytics.log
+      params:
+        event_type: "slack_chat_interaction"
+        user_id: ${trigger.user.id}
+        channel: ${trigger.channel}
+        message_length: ${trigger.message.length}
+        response_length: ${process_message.output.length}
+        timestamp: ${workflow.timestamp}

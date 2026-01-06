@@ -1,0 +1,153 @@
+version: "1.0"
+project: "Data-Analyst-with-MCP-Tools"
+
+# 1. TRIGGER: Scheduled daily analysis
+trigger:
+  type: schedule
+  # Run every day at 9 AM
+  cron: "0 9 * * *"
+  # Context for the scheduled job
+  context:
+    report_name: "Daily Sales Analysis"
+    recipients: ["team@company.com"]
+    lookback_days: 7
+
+# 2. RESOURCES: Claude with Database and Filesystem Tools
+resources:
+  # The Data Analyst Agent with MCP Tools
+  - id: data_analyst
+    provider: anthropic
+    model: claude-3-5-sonnet
+    # Mount MCP servers as tools - agent can use these directly
+    tools: [postgres_mcp, filesystem_mcp, slack_mcp]
+    system_prompt: |
+      You are a Senior Data Analyst with access to company databases and systems.
+      
+      Available Tools:
+      - PostgreSQL database access (sales, customers, products tables)
+      - Filesystem access (to save reports)
+      - Slack integration (to send notifications)
+      
+      Your workflow:
+      1. Query the database to gather data
+      2. Analyze trends, anomalies, and insights
+      3. Generate a markdown report with charts
+      4. Save the report to the filesystem
+      5. Send a summary to Slack
+      
+      Be thorough but concise. Focus on actionable insights.
+
+  # MCP Server: PostgreSQL Database
+  - id: postgres_mcp
+    type: mcp-server
+    command: "npx"
+    args: 
+      - "-y"
+      - "@modelcontextprotocol/server-postgres"
+      - "postgresql://user:password@localhost:5432/analytics"
+    env:
+      POSTGRES_CONNECTION_STRING: ${DATABASE_URL}
+    # Optional: Restrict to read-only queries
+    config:
+      readonly: true
+      allowed_schemas: ["public", "sales"]
+
+  # MCP Server: Filesystem
+  - id: filesystem_mcp
+    type: mcp-server
+    command: "npx"
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-filesystem"
+      - "/app/reports"
+    # Restrict filesystem access to reports directory
+    config:
+      allowed_operations: ["read", "write", "list"]
+      root_directory: "/app/reports"
+
+  # MCP Server: Slack
+  - id: slack_mcp
+    type: mcp-server
+    command: "npx"
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-slack"
+    env:
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
+      SLACK_TEAM_ID: ${SLACK_TEAM_ID}
+
+# 3. WORKFLOW: Autonomous Data Analysis
+workflow:
+  type: sequential
+  steps:
+    # Step 1: Agent autonomously performs analysis using MCP tools
+    - id: perform_analysis
+      agent: data_analyst
+      instruction: |
+        Good morning! It's time for the {trigger.context.report_name}.
+        
+        Today's Date: {workflow.date}
+        Analysis Period: Last {trigger.context.lookback_days} days
+        
+        YOUR TASK:
+        1. Query the PostgreSQL database to gather:
+           - Total sales by day (last 7 days)
+           - Top 10 products by revenue
+           - Customer acquisition count
+           - Average order value trend
+           - Any significant anomalies or outliers
+        
+        2. Analyze the data:
+           - Calculate week-over-week growth
+           - Identify trending products
+           - Flag any concerning drops or spikes
+           - Note seasonal patterns
+        
+        3. Generate a report:
+           - Use markdown format
+           - Include SQL queries used (for transparency)
+           - Add summary statistics table
+           - Highlight key insights (3-5 bullet points)
+           - Provide actionable recommendations
+        
+        4. Save the report:
+           - Filename: "daily_sales_analysis_{date}.md"
+           - Location: /app/reports/daily/
+        
+        5. Send Slack notification:
+           - Channel: #sales-analytics
+           - Message: Brief summary with link to full report
+           - Mention @sales-team if there are critical alerts
+        
+        Use your MCP tools to complete this entire workflow autonomously.
+        You have full access to query databases, save files, and send messages.
+    
+    # Step 2: Verify and log completion
+    - id: log_completion
+      type: action
+      action: analytics.log
+      params:
+        event_type: "daily_analysis_completed"
+        timestamp: ${workflow.timestamp}
+        duration_ms: ${perform_analysis.duration}
+        queries_executed: ${perform_analysis.tool_calls.postgres}
+        files_created: ${perform_analysis.tool_calls.filesystem}
+        notifications_sent: ${perform_analysis.tool_calls.slack}
+
+# 4. ERROR HANDLING: What to do if the workflow fails
+on_error:
+  - type: notification
+    action: slack.send_message
+    params:
+      channel: "#alerts"
+      message: |
+        ⚠️ Daily Sales Analysis Failed
+        
+        Time: {workflow.timestamp}
+        Error: {workflow.error.message}
+        
+        Please check the logs and database connectivity.
+  
+  - type: log
+    level: error
+    message: "Daily analysis workflow failed: {workflow.error}"

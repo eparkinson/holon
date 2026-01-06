@@ -1,0 +1,137 @@
+version: "1.0"
+project: "Multi-Agent-Intelligence-Summary"
+
+# 1. TRIGGER: Webhook with Reply-To URL
+trigger:
+  type: webhook
+  route: "/api/v1/analyze/text"
+  method: POST
+  auth_token: ${WEBHOOK_AUTH_TOKEN}
+  # Expected payload includes the reply-to callback URL
+  schema:
+    request_id: "string"
+    text: "string"
+    reply_to_url: "string"
+    metadata: "object"
+
+# 2. RESOURCES: Gemini, Grok, and Anthropic Agents
+resources:
+  # Scout 1: Gemini for multimodal analysis and web grounding
+  - id: gemini_analyzer
+    provider: gemini
+    model: gemini-1.5-pro
+    system_prompt: |
+      You are a Technical Analysis Specialist.
+      Analyze the provided text for:
+      - Technical accuracy and correctness
+      - Clarity and readability
+      - Structure and organization
+      - Missing context or details
+      
+      Provide a detailed technical assessment with specific observations.
+
+  # Scout 2: Grok for social context and sentiment
+  - id: grok_analyzer
+    provider: grok
+    model: grok-beta
+    system_prompt: |
+      You are a Social Context Analyst.
+      Analyze the provided text for:
+      - Tone and sentiment
+      - Potential social/cultural implications
+      - Audience appropriateness
+      - Trending relevance and timing
+      
+      Provide insights on how this content might be received by different audiences.
+
+  # Executive: Anthropic Claude for synthesis
+  - id: claude_synthesizer
+    provider: anthropic
+    model: claude-3-5-sonnet
+    system_prompt: |
+      You are a Chief Intelligence Officer.
+      Your role is to synthesize multiple analysis reports into a single, actionable summary.
+      
+      Be concise, balanced, and highlight both strengths and areas for improvement.
+      Provide clear recommendations based on the combined intelligence.
+
+# 3. WORKFLOW: Two-step parallel analysis followed by synthesis
+workflow:
+  type: sequential
+  steps:
+    # Step 1: Run both analyses in parallel (Scatter-Gather pattern)
+    - id: parallel_analysis
+      type: scatter-gather
+      parallel_tasks:
+        # Task A: Gemini technical analysis
+        - id: technical_review
+          agent: gemini_analyzer
+          instruction: |
+            Analyze the following text from a technical perspective:
+            
+            TEXT:
+            {trigger.payload.text}
+            
+            METADATA:
+            {trigger.payload.metadata}
+            
+            Provide your technical analysis following your system instructions.
+        
+        # Task B: Grok social context analysis
+        - id: social_review
+          agent: grok_analyzer
+          instruction: |
+            Analyze the following text from a social and sentiment perspective:
+            
+            TEXT:
+            {trigger.payload.text}
+            
+            METADATA:
+            {trigger.payload.metadata}
+            
+            Provide your social context analysis following your system instructions.
+    
+    # Step 2: Synthesize both analyses into a unified summary
+    - id: synthesize_summary
+      agent: claude_synthesizer
+      inputs: [parallel_analysis.results]
+      instruction: |
+        You have received two independent analyses of the same text:
+        
+        TECHNICAL ANALYSIS (from Gemini):
+        {technical_review.output}
+        
+        SOCIAL CONTEXT ANALYSIS (from Grok):
+        {social_review.output}
+        
+        ORIGINAL TEXT FOR REFERENCE:
+        {trigger.payload.text}
+        
+        Task: Create a comprehensive summary that:
+        1. Integrates insights from both analyses
+        2. Highlights key findings and consensus points
+        3. Notes any contradictions or tensions
+        4. Provides 3-5 concrete, actionable recommendations
+        
+        Format your response as a structured report with clear sections.
+    
+    # Step 3: Send the unified response back via the reply-to URL
+    - id: send_response
+      type: action
+      action: http.post
+      params:
+        url: ${trigger.payload.reply_to_url}
+        headers:
+          Content-Type: "application/json"
+          Authorization: "Bearer ${WEBHOOK_AUTH_TOKEN}"
+        body:
+          request_id: ${trigger.payload.request_id}
+          status: "completed"
+          timestamp: ${workflow.timestamp}
+          analysis:
+            technical: ${technical_review.output}
+            social: ${social_review.output}
+            synthesis: ${synthesize_summary.output}
+          metadata:
+            agents_used: ["gemini-1.5-pro", "grok-beta", "claude-3-5-sonnet"]
+            processing_time_ms: ${workflow.duration}
