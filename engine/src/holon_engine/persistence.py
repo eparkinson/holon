@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
@@ -55,9 +56,18 @@ class PersistenceService:
     def list_projects(self) -> List[Project]:
         """List all deployed projects."""
         projects_dir = self._path("projects")
+
+        # Ensure projects directory exists
+        if not self.fs.exists(projects_dir):
+            return []
+
         # glob returns full paths including protocol prefix sometimes, or just path
         # fsspec's fs.glob usually returns paths relative to fs root or absolute paths
-        files = self.fs.glob(f"{projects_dir}/*.json")
+        try:
+            files = self.fs.glob(f"{projects_dir}/*.json")
+        except Exception:
+            # If glob fails for any reason, return empty list
+            return []
 
         projects = []
         for file_path in files:
@@ -68,7 +78,17 @@ class PersistenceService:
                     projects.append(Project(**json.load(f)))
             except Exception:
                 continue
-        return sorted(projects, key=lambda p: p.created_at, reverse=True)
+
+        # Safely sort projects by created_at, handling None values
+        try:
+            return sorted(
+                projects,
+                key=lambda p: p.created_at or datetime.min,
+                reverse=True,
+            )
+        except Exception:
+            # If sorting fails for any reason, return unsorted list
+            return projects
 
     def save_run(self, run: Run):
         """Save or update a workflow run."""
