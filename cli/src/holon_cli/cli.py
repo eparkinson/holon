@@ -253,7 +253,7 @@ def deploy(
 
 @app.command()
 def list(
-    all: bool = typer.Option(False, "--all", help="Show all processes including stopped"),
+    show_all: bool = typer.Option(False, "--all", help="Show all processes including stopped"),
     format: str = typer.Option("table", "--format", help="Output format (table, json)"),
 ):
     """
@@ -267,7 +267,7 @@ def list(
         with console.status("[bold blue]Fetching processes..."):
             response = httpx.get(
                 f"{cli_config.host}/api/v1/processes",
-                params={"all": all},
+                params={"all": show_all},
                 headers=(
                     {"Authorization": f"Bearer {cli_config.api_key}"} if cli_config.api_key else {}
                 ),
