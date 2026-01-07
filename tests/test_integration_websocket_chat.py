@@ -19,8 +19,8 @@ except ImportError:
     pytest.skip("websockets not installed", allow_module_level=True)
 
 @pytest.mark.asyncio
-async def test_ollama_integration():
-    """Test end-to-end Ollama chat flow via Websockets."""
+async def test_websocket_chat_integration():
+    """Test end-to-end Chat flow via Websockets (using Ollama)."""
     # Get the root directory
     root_dir = Path(__file__).parent.parent
     engine_dir = root_dir / "engine"
