@@ -1,12 +1,13 @@
 """FastAPI application for the Holon Engine API."""
 
 import logging
+import json
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
@@ -263,3 +264,87 @@ async def get_process_logs(process_id: UUID):
     if latest_run:
         return latest_run.trace_events
     return []
+
+
+@app.websocket("/api/v1/projects/{project_id}/chat")
+async def websocket_chat(websocket: WebSocket, project_id: UUID):
+    """WebSocket endpoint for interactive chat with a deployed project."""
+    await websocket.accept()
+    store = get_persistence()
+    
+    try:
+        # Verify project exists
+        project = store.get_project(project_id)
+        if not project:
+            await websocket.send_json({"error": "Project not found"})
+            await websocket.close(code=1008)  # Policy violation
+            return
+        
+        # Main message loop
+        while True:
+            try:
+                # Receive message from client
+                data = await websocket.receive_text()
+                message_data = json.loads(data)
+                
+                # Extract user message
+                user_message = message_data.get("message", "")
+                if not user_message:
+                    await websocket.send_json({"error": "No message provided"})
+                    continue
+                
+                # Create a run with the user's message as context
+                run_id = uuid4()
+                run = Run(
+                    id=run_id,
+                    project_id=project_id,
+                    status=RunStatus.PENDING,
+                    input_context={"message": user_message},
+                    started_at=None,
+                    ended_at=None,
+                )
+                store.save_run(run)
+                
+                # Execute the workflow synchronously (for chat, we want to wait for the response)
+                engine = WorkflowEngine(store)
+                engine.execute_run(run_id, project.config_yaml)
+                
+                # Reload the run to get the final state
+                completed_run = store.get_run(run_id)
+                
+                # Extract the response from the workflow execution
+                response_text = ""
+                if completed_run and completed_run.context:
+                    # The response should be in the last step's output
+                    steps = completed_run.context.get("steps", {})
+                    if steps:
+                        # Get the last step (assuming sequential workflow)
+                        last_step_id = list(steps.keys())[-1] if steps else None
+                        if last_step_id:
+                            last_step_output = steps[last_step_id]
+                            response_text = last_step_output.get("result", "")
+                
+                # Send response back to client
+                await websocket.send_json({
+                    "response": response_text,
+                    "role": "assistant",
+                    "run_id": str(run_id)
+                })
+                
+            except WebSocketDisconnect:
+                logger.info(f"WebSocket disconnected for project {project_id}")
+                break
+            except json.JSONDecodeError:
+                await websocket.send_json({"error": "Invalid JSON format"})
+            except Exception as e:
+                logger.error(f"Error processing chat message: {e}")
+                await websocket.send_json({"error": str(e)})
+                
+    except Exception as e:
+        logger.error(f"WebSocket error for project {project_id}: {e}")
+    finally:
+        try:
+            await websocket.close()
+        except:
+            pass
+

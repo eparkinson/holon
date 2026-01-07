@@ -1,6 +1,7 @@
 """Workflow execution engine - interprets and executes HolonDSL workflows."""
 
 import re
+import httpx
 from datetime import datetime
 from typing import Any, Dict, Optional
 from uuid import UUID
@@ -30,6 +31,43 @@ class WorkflowEngine:
     def parse_config(self, config_yaml: str) -> HolonConfig:
         config_dict = yaml.safe_load(config_yaml)
         return HolonConfig(**config_dict)
+
+    def _call_ollama_agent(self, base_url: str, model: str, instruction: str, system_prompt: Optional[str] = None) -> str:
+        """Call Ollama API to get agent response."""
+        try:
+            # Prepare the request payload
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": instruction})
+            
+            payload = {
+                "model": model,
+                "messages": messages,
+                "stream": False
+            }
+            
+            # Make the API call
+            with httpx.Client(timeout=60.0) as client:
+                response = client.post(
+                    f"{base_url}/api/chat",
+                    json=payload
+                )
+                response.raise_for_status()
+                result = response.json()
+                
+                # Extract the assistant's response
+                if "message" in result and "content" in result["message"]:
+                    return result["message"]["content"]
+                else:
+                    return f"[Error: Unexpected Ollama response format: {result}]"
+                    
+        except httpx.ConnectError:
+            return f"[Error: Could not connect to Ollama at {base_url}. Make sure Ollama is running.]"
+        except httpx.TimeoutException:
+            return "[Error: Ollama request timed out]"
+        except Exception as e:
+            return f"[Error calling Ollama: {str(e)}]"
 
     def execute_run(self, run_id: UUID, config_yaml: str) -> None:
         run = self.store.get_run(run_id)
@@ -100,11 +138,31 @@ class WorkflowEngine:
                     "inputs": step.inputs,
                 }
 
-                # SIMULATION
-                step_output = {
-                    "result": f"[SIMULATED] Executed step {step.id}",
-                    "instruction": instruction,
-                }
+                # Find the agent configuration
+                agent = None
+                for resource in config.resources:
+                    if resource.id == step.agent:
+                        agent = resource
+                        break
+                
+                # Execute the agent
+                if agent and agent.provider == "ollama":
+                    # Call Ollama
+                    base_url = getattr(agent, "base_url", "http://localhost:11434")
+                    model = agent.model or "llama3"
+                    system_prompt = getattr(agent, "system_prompt", None)
+                    
+                    result = self._call_ollama_agent(base_url, model, instruction, system_prompt)
+                    step_output = {
+                        "result": result,
+                        "instruction": instruction,
+                    }
+                else:
+                    # SIMULATION for other providers
+                    step_output = {
+                        "result": f"[SIMULATED] Executed step {step.id}",
+                        "instruction": instruction,
+                    }
 
                 context["steps"][step.id] = step_output
 
@@ -153,4 +211,4 @@ class WorkflowEngine:
                     return match.group(0)
             return str(value)
 
-        return re.sub(r"$\{([^}]+)\}", replace_var, template)
+        return re.sub(r"\{([^}]+)\}", replace_var, template)
