@@ -1,40 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { ProcesssView } from '@/views/ProcesssView';
+import { ProcessesView } from '@/views/ProcessesView';
 import { apiClient } from '@/services/api';
 
 // Mock the API client
 vi.mock('@/services/api', () => ({
   apiClient: {
-    listProcesss: vi.fn(),
+    listProcesses: vi.fn(),
     triggerRun: vi.fn(),
   },
 }));
 
-describe('ProcesssView', () => {
+describe('ProcessesView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders processes title', () => {
-    vi.mocked(apiClient.listProcesss).mockResolvedValue([]);
+    vi.mocked(apiClient.listProcesses).mockResolvedValue([]);
     
     render(
       <BrowserRouter>
-        <ProcesssView />
+        <ProcessesView />
       </BrowserRouter>
     );
     
-    expect(screen.getByText('Processs')).toBeInTheDocument();
+    expect(screen.getByText('Processes')).toBeInTheDocument();
   });
 
   it('shows loading state initially', () => {
-    vi.mocked(apiClient.listProcesss).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(apiClient.listProcesses).mockImplementation(() => new Promise(() => {}));
     
     render(
       <BrowserRouter>
-        <ProcesssView />
+        <ProcessesView />
       </BrowserRouter>
     );
     
@@ -42,7 +42,7 @@ describe('ProcesssView', () => {
   });
 
   it('shows processes when available', async () => {
-    const mockProcesss = [
+    const mockProcesses = [
       {
         id: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Daily Market Briefing',
@@ -50,11 +50,11 @@ describe('ProcesssView', () => {
       },
     ];
     
-    vi.mocked(apiClient.listProcesss).mockResolvedValue(mockProcesss);
+    vi.mocked(apiClient.listProcesses).mockResolvedValue(mockProcesses);
     
     render(
       <BrowserRouter>
-        <ProcesssView />
+        <ProcessesView />
       </BrowserRouter>
     );
     
@@ -64,11 +64,11 @@ describe('ProcesssView', () => {
   });
 
   it('shows empty state when no processes', async () => {
-    vi.mocked(apiClient.listProcesss).mockResolvedValue([]);
+    vi.mocked(apiClient.listProcesses).mockResolvedValue([]);
     
     render(
       <BrowserRouter>
-        <ProcesssView />
+        <ProcessesView />
       </BrowserRouter>
     );
     
@@ -78,11 +78,11 @@ describe('ProcesssView', () => {
   });
 
   it('shows error state when API fails', async () => {
-    vi.mocked(apiClient.listProcesss).mockRejectedValue(new Error('Network error'));
+    vi.mocked(apiClient.listProcesses).mockRejectedValue(new Error('Network error'));
     
     render(
       <BrowserRouter>
-        <ProcesssView />
+        <ProcessesView />
       </BrowserRouter>
     );
     

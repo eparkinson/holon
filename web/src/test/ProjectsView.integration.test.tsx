@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { ProcesssView } from '@/views/ProcesssView';
+import { ProcessesView } from '@/views/ProcessesView';
 
 /**
- * Integration test for ProcesssView that calls the real API.
+ * Integration test for ProcessesView that calls the real API.
  * 
  * This test requires a running Holon Engine API server.
  * It validates that the web dashboard can successfully:
@@ -20,7 +20,7 @@ import { ProcesssView } from '@/views/ProcesssView';
 const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
 const INTEGRATION_TEST_ENABLED = process.env.VITE_INTEGRATION_TEST === 'true';
 
-describe.skipIf(!INTEGRATION_TEST_ENABLED)('ProcesssView Integration', () => {
+describe.skipIf(!INTEGRATION_TEST_ENABLED)('ProcessesView Integration', () => {
   let testProcessId: string | null = null;
 
   beforeAll(async () => {
@@ -80,7 +80,7 @@ workflow:
   it('fetches and displays deployed processes from the API', async () => {
     render(
       <BrowserRouter>
-        <ProcesssView />
+        <ProcessesView />
       </BrowserRouter>
     );
 
@@ -108,7 +108,7 @@ workflow:
     
     render(
       <BrowserRouter>
-        <ProcesssView />
+        <ProcessesView />
       </BrowserRouter>
     );
 
