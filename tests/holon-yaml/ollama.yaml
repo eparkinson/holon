@@ -1,0 +1,34 @@
+version: "1.0"
+project: "Integration-Test-Ollama"
+
+# 1. TRIGGER: Web Chat Interface (Sandbox)
+trigger:
+  type: websocket
+  # Allow connections from the Holon web dashboard
+  cors: ["http://localhost:3000", "https://*.holon.app"]
+  # Direct interaction mode - no predefined workflow path
+  mode: "interactive"
+
+# 2. RESOURCES: Single Ollama Agent
+resources:
+  - id: ollama_assistant
+    provider: ollama
+    model: llama3
+    base_url: "http://localhost:11434"
+    # System context for the chat assistant
+    system_prompt: |
+      You are a helpful AI assistant powered by Ollama.
+      Provide clear, concise, and accurate responses to user queries.
+      If you don't know something, admit it. Always be respectful and professional.
+
+# 3. WORKFLOW: Simple chat interaction
+workflow:
+  type: sequential
+  steps:
+    - id: chat_response
+      agent: ollama_assistant
+      # The user's message from the chat interface
+      instruction: |
+        User Message: "{trigger.message}"
+        
+        Respond naturally and helpfully to the user's query.
