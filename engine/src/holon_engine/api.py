@@ -7,7 +7,13 @@ from datetime import datetime
 from typing import List
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    BackgroundTasks,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
@@ -271,7 +277,7 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
     """WebSocket endpoint for interactive chat with a deployed project."""
     await websocket.accept()
     store = get_persistence()
-    
+
     try:
         # Verify project exists
         project = store.get_project(project_id)
@@ -279,20 +285,20 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
             await websocket.send_json({"error": "Project not found"})
             await websocket.close(code=1008)  # Policy violation
             return
-        
+
         # Main message loop
         while True:
             try:
                 # Receive message from client
                 data = await websocket.receive_text()
                 message_data = json.loads(data)
-                
+
                 # Extract user message
                 user_message = message_data.get("message", "")
                 if not user_message:
                     await websocket.send_json({"error": "No message provided"})
                     continue
-                
+
                 # Create a run with the user's message as context
                 run_id = uuid4()
                 run = Run(
@@ -304,14 +310,14 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
                     ended_at=None,
                 )
                 store.save_run(run)
-                
+
                 # Execute the workflow synchronously (for chat, we want to wait for the response)
                 engine = WorkflowEngine(store)
                 engine.execute_run(run_id, project.config_yaml)
-                
+
                 # Reload the run to get the final state
                 completed_run = store.get_run(run_id)
-                
+
                 # Extract the response from the workflow execution
                 response_text = ""
                 if completed_run and completed_run.context:
@@ -323,14 +329,16 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
                         if last_step_id:
                             last_step_output = steps[last_step_id]
                             response_text = last_step_output.get("result", "")
-                
+
                 # Send response back to client
-                await websocket.send_json({
-                    "response": response_text,
-                    "role": "assistant",
-                    "run_id": str(run_id)
-                })
-                
+                await websocket.send_json(
+                    {
+                        "response": response_text,
+                        "role": "assistant",
+                        "run_id": str(run_id),
+                    }
+                )
+
             except WebSocketDisconnect:
                 logger.info(f"WebSocket disconnected for project {project_id}")
                 break
@@ -339,7 +347,7 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
             except Exception as e:
                 logger.error(f"Error processing chat message: {e}")
                 await websocket.send_json({"error": str(e)})
-                
+
     except Exception as e:
         logger.error(f"WebSocket error for project {project_id}: {e}")
     finally:
@@ -347,4 +355,3 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
             await websocket.close()
         except:
             pass
-
