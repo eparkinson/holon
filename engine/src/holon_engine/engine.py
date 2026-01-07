@@ -149,9 +149,9 @@ class WorkflowEngine:
                 # Execute the agent
                 if agent and agent.provider == "ollama":
                     # Call Ollama
-                    base_url = getattr(agent, "base_url", "http://localhost:11434")
+                    base_url = agent.base_url or "http://localhost:11434"
                     model = agent.model or "llama3"
-                    system_prompt = getattr(agent, "system_prompt", None)
+                    system_prompt = agent.system_prompt or None
 
                     result = self._call_ollama_agent(
                         base_url, model, instruction, system_prompt

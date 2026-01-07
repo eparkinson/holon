@@ -353,5 +353,6 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
     finally:
         try:
             await websocket.close()
-        except:
+        except (WebSocketDisconnect, RuntimeError):
+            # WebSocket already closed or connection lost
             pass
