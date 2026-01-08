@@ -116,7 +116,7 @@ async def test_websocket_chat_integration():
             
             # Assertions
             assert "response" in response_data
-            assert response_data["role"] == "assistant"
+            assert response_data["role"] == "ai"
             # We don't verify the actual content heavily as it depends on the LLM
             assert len(response_data["response"]) > 0
 

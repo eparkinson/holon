@@ -84,7 +84,12 @@ class WorkflowEngine:
             self.store.save_run(run)
 
             # Init Context
-            context = {"trigger": {"input": run.input_context or {}}, "steps": {}}
+            # Helper: Access input directly via trigger.X or trigger.input.X
+            input_ctx = run.input_context or {}
+            trigger_ctx = {"input": input_ctx}
+            trigger_ctx.update(input_ctx) # Flatten inputs into trigger root
+            
+            context = {"trigger": trigger_ctx, "steps": {}}
 
             # Execute
             if config.workflow.type == WorkflowType.SEQUENTIAL:

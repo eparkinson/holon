@@ -291,10 +291,23 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
             try:
                 # Receive message from client
                 data = await websocket.receive_text()
+                logger.info(f"Received WebSocket message: {data}")
                 message_data = json.loads(data)
 
-                # Extract user message
-                user_message = message_data.get("message", "")
+                # Extract user message - Support both 'message' (internal) and 'text' (DeepChat)
+                user_message = ""
+                # DeepChat sends { messages: [{ role: 'user', text: '...' }] } or plain { text: '...' }
+                # It depends on requestBodyLimits, but for websockets it typically sends { messages: [...] }
+                # or just the message object itself if configured.
+                # Let's inspect the structure:
+                if "messages" in message_data and isinstance(message_data["messages"], list):
+                     # Get the last message
+                     if len(message_data["messages"]) > 0:
+                         last_msg = message_data["messages"][-1]
+                         user_message = last_msg.get("text") or last_msg.get("message") or ""
+                else:
+                    user_message = message_data.get("message") or message_data.get("text") or ""
+                
                 if not user_message:
                     await websocket.send_json({"error": "No message provided"})
                     continue
@@ -330,11 +343,12 @@ async def websocket_chat(websocket: WebSocket, project_id: UUID):
                             last_step_output = steps[last_step_id]
                             response_text = last_step_output.get("result", "")
 
-                # Send response back to client
+                # Send response back to client in format DeepChat expects
                 await websocket.send_json(
                     {
-                        "response": response_text,
-                        "role": "assistant",
+                        "text": response_text,
+                        "response": response_text,  # Keep for backward compatibility
+                        "role": "ai",
                         "run_id": str(run_id),
                     }
                 )
