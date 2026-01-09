@@ -11,6 +11,9 @@ import type { DeployRequest } from '@/types/api';
 // Validation pattern for environment variable keys
 const ENV_VAR_KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+// Pattern for extracting name from YAML
+const YAML_NAME_PATTERN = /name:\s*["']?([^"'\n]+)["']?/;
+
 interface DeployDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -28,6 +31,11 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
 
   if (!isOpen) return null;
 
+  const extractNameFromYaml = (yaml: string): string | null => {
+    const nameMatch = yaml.match(YAML_NAME_PATTERN);
+    return nameMatch ? nameMatch[1].trim() : null;
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -37,9 +45,9 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
         setConfigYaml(content);
         
         // Extract name from YAML
-        const nameMatch = content.match(/name:\s*["']?([^"'\n]+)["']?/);
-        if (nameMatch) {
-          setExtractedName(nameMatch[1].trim());
+        const name = extractNameFromYaml(content);
+        if (name) {
+          setExtractedName(name);
           setShowConfirmation(true);
         } else {
           setError('Could not find "name:" field in YAML configuration');
@@ -155,9 +163,9 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
               e.preventDefault();
               // Extract name from pasted YAML
               if (configYaml) {
-                const nameMatch = configYaml.match(/name:\s*["']?([^"'\n]+)["']?/);
-                if (nameMatch) {
-                  setExtractedName(nameMatch[1].trim());
+                const name = extractNameFromYaml(configYaml);
+                if (name) {
+                  setExtractedName(name);
                   setShowConfirmation(true);
                   setError(null);
                 } else {
