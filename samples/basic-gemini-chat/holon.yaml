@@ -1,5 +1,5 @@
 version: "1.0"
-project: "Basic-Gemini-Chat"
+name: "Basic-Gemini-Chat"
 
 # 1. TRIGGER: Web Chat Interface (Sandbox)
 trigger:

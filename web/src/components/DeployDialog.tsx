@@ -18,11 +18,12 @@ interface DeployDialogProps {
 }
 
 export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) {
-  const [name, setName] = useState('');
   const [configYaml, setConfigYaml] = useState('');
   const [envVars, setEnvVars] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [extractedName, setExtractedName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -35,12 +36,13 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
         const content = e.target?.result as string;
         setConfigYaml(content);
         
-        // Extract project name from YAML if not already set
-        if (!name) {
-          const projectMatch = content.match(/project:\s*["']?([^"'\n]+)["']?/);
-          if (projectMatch) {
-            setName(projectMatch[1]);
-          }
+        // Extract name from YAML
+        const nameMatch = content.match(/name:\s*["']?([^"'\n]+)["']?/);
+        if (nameMatch) {
+          setExtractedName(nameMatch[1].trim());
+          setShowConfirmation(true);
+        } else {
+          setError('Could not find "name:" field in YAML configuration');
         }
       };
       reader.readAsText(file);
@@ -76,8 +78,8 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
     e.preventDefault();
     setError(null);
 
-    if (!name.trim()) {
-      setError('Process name is required');
+    if (!extractedName) {
+      setError('Process name is required. Make sure your YAML contains a "name:" field.');
       return;
     }
 
@@ -90,7 +92,7 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
 
     try {
       const request: DeployRequest = {
-        name: name.trim(),
+        name: extractedName,
         config_yaml: configYaml,
         env_vars: parseEnvVars(envVars),
       };
@@ -98,10 +100,11 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
       await apiClient.deployProcess(request);
       
       // Reset form
-      setName('');
       setConfigYaml('');
       setEnvVars('');
       setError(null);
+      setShowConfirmation(false);
+      setExtractedName(null);
       
       // Notify parent of success
       onSuccess();
@@ -115,10 +118,11 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setName('');
       setConfigYaml('');
       setEnvVars('');
       setError(null);
+      setShowConfirmation(false);
+      setExtractedName(null);
       onClose();
     }
   };
@@ -128,8 +132,12 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
       <Card className="w-full max-w-4xl max-h-[90vh] flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
           <div>
-            <CardTitle>Deploy New Process</CardTitle>
-            <CardDescription>Upload or paste your holon.yaml configuration</CardDescription>
+            <CardTitle>{showConfirmation ? 'Confirm Deployment' : 'Deploy New Process'}</CardTitle>
+            <CardDescription>
+              {showConfirmation 
+                ? 'Review and confirm your deployment' 
+                : 'Upload or paste your holon.yaml configuration'}
+            </CardDescription>
           </div>
           <Button
             variant="ghost"
@@ -142,113 +150,169 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
         </CardHeader>
         
         <CardContent className="flex-1 overflow-auto pt-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Process Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Process Name *</Label>
-              <Input
-                id="name"
-                placeholder="e.g., Daily-Briefing"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isSubmitting}
-                required
-              />
-            </div>
+          {!showConfirmation ? (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              // Extract name from pasted YAML
+              if (configYaml) {
+                const nameMatch = configYaml.match(/name:\s*["']?([^"'\n]+)["']?/);
+                if (nameMatch) {
+                  setExtractedName(nameMatch[1].trim());
+                  setShowConfirmation(true);
+                  setError(null);
+                } else {
+                  setError('Could not find "name:" field in YAML configuration');
+                }
+              }
+            }} className="space-y-6">
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="file-upload">Upload YAML File</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={fileInputRef}
+                    id="file-upload"
+                    type="file"
+                    accept=".yaml,.yml"
+                    onChange={handleFileUpload}
+                    disabled={isSubmitting}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={isSubmitting}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
-            {/* File Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="file-upload">Upload YAML File</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  ref={fileInputRef}
-                  id="file-upload"
-                  type="file"
-                  accept=".yaml,.yml"
-                  onChange={handleFileUpload}
+              {/* YAML Content */}
+              <div className="space-y-2">
+                <Label htmlFor="config-yaml">
+                  YAML Configuration *
+                  {configYaml && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({configYaml.split('\n').length} lines)
+                    </span>
+                  )}
+                </Label>
+                <Textarea
+                  id="config-yaml"
+                  placeholder="Paste your holon.yaml content here..."
+                  value={configYaml}
+                  onChange={(e) => setConfigYaml(e.target.value)}
                   disabled={isSubmitting}
-                  className="flex-1"
+                  required
+                  className="font-mono text-xs min-h-[300px]"
                 />
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon"
+                  onClick={handleClose}
                   disabled={isSubmitting}
-                  onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting || !configYaml}>
+                  Continue
                 </Button>
               </div>
-            </div>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Confirmation Screen */}
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-muted/50 border">
+                  <h3 className="font-semibold mb-2">Process Name</h3>
+                  <p className="text-2xl font-bold">{extractedName}</p>
+                </div>
 
-            {/* YAML Content */}
-            <div className="space-y-2">
-              <Label htmlFor="config-yaml">
-                YAML Configuration *
-                {configYaml && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    ({configYaml.split('\n').length} lines)
-                  </span>
-                )}
-              </Label>
-              <Textarea
-                id="config-yaml"
-                placeholder="Paste your holon.yaml content here..."
-                value={configYaml}
-                onChange={(e) => setConfigYaml(e.target.value)}
-                disabled={isSubmitting}
-                required
-                className="font-mono text-xs min-h-[300px]"
-              />
-            </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Configuration Preview</h3>
+                  <div className="bg-slate-950 text-slate-50 p-4 rounded-md overflow-x-auto text-xs font-mono leading-relaxed border border-slate-800 max-h-[300px] overflow-y-auto">
+                    {configYaml.split('\n').map((line, i) => (
+                      <div key={i} className="text-slate-300">{line || ' '}</div>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Environment Variables (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="env-vars">
-                Environment Variables (Optional)
-                <span className="ml-2 text-xs text-muted-foreground font-normal">
-                  One per line: KEY=value
-                </span>
-              </Label>
-              <Textarea
-                id="env-vars"
-                placeholder={`API_KEY=your_key_here\nWEBHOOK_TOKEN=token123`}
-                value={envVars}
-                onChange={(e) => setEnvVars(e.target.value)}
-                disabled={isSubmitting}
-                className="font-mono text-xs min-h-[100px]"
-              />
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                {error}
+                {/* Environment Variables (Optional) */}
+                <div className="space-y-2">
+                  <Label htmlFor="env-vars">
+                    Environment Variables (Optional)
+                    <span className="ml-2 text-xs text-muted-foreground font-normal">
+                      One per line: KEY=value
+                    </span>
+                  </Label>
+                  <Textarea
+                    id="env-vars"
+                    placeholder={`API_KEY=your_key_here\nWEBHOOK_TOKEN=token123`}
+                    value={envVars}
+                    onChange={(e) => setEnvVars(e.target.value)}
+                    disabled={isSubmitting}
+                    className="font-mono text-xs min-h-[100px]"
+                  />
+                </div>
               </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>Deploying...</>
-                ) : (
-                  <>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Deploy Process
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
+              {/* Error Message */}
+              {error && (
+                <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-between gap-2 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowConfirmation(false);
+                    setExtractedName(null);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Back
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleClose}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>Deploying...</>
+                    ) : (
+                      <>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Deploy Process
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,5 @@
 version: "1.0"
-project: "Daily-Briefing-Digest"
+name: "Daily-Briefing-Digest"
 
 # 1. TRIGGER: Run every morning at 7 AM
 trigger:
