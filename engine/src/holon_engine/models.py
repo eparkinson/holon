@@ -90,7 +90,7 @@ class HolonConfig(BaseModel):
     """Complete HolonDSL configuration."""
 
     version: str
-    project: str
+    name: str
     trigger: Optional[Trigger] = None
     resources: List[Resource]
     workflow: Workflow

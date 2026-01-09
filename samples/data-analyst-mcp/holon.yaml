@@ -1,5 +1,5 @@
 version: "1.0"
-project: "Data-Analyst-with-MCP-Tools"
+name: "Data-Analyst-with-MCP-Tools"
 
 # 1. TRIGGER: Scheduled daily analysis
 trigger:

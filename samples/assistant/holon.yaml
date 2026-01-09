@@ -1,5 +1,5 @@
 version: "1.0"
-project: "My-Personal-Chief-of-Staff"
+name: "My-Personal-Chief-of-Staff"
 
 # 1. TRIGGER: Chat Interface (Slack/WhatsApp)
 trigger:

@@ -1,5 +1,5 @@
 version: "1.0"
-project: "Slack-Gemini-Assistant"
+name: "Slack-Gemini-Assistant"
 
 # 1. TRIGGER: Slack Chat Interface
 trigger:

@@ -1,5 +1,5 @@
 version: "1.0"
-project: "Multi-Agent-Intelligence-Summary"
+name: "Multi-Agent-Intelligence-Summary"
 
 # 1. TRIGGER: Webhook with Reply-To URL
 trigger:

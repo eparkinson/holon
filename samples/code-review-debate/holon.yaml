@@ -1,5 +1,5 @@
 version: "1.0"
-project: "Code-Review-Debate"
+name: "Code-Review-Debate"
 
 # 1. TRIGGER: Webhook receiving code submission
 trigger:
