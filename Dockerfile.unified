@@ -1,5 +1,15 @@
 # Unified Dockerfile for running both Engine and Web in a single container
 # Uses supervisord to manage processes and nginx to serve the web app
+#
+# BUILD INSTRUCTIONS:
+# Due to the need to build the web app, this Dockerfile expects the web/dist
+# directory to be pre-built on the host machine before building the container.
+#
+# 1. Build the web app first:
+#    cd web && npm install && npm run build && cd ..
+#
+# 2. Then build the container:
+#    docker build -f Dockerfile.unified -t holon-unified:latest .
 
 FROM python:3.11-slim
 
@@ -7,16 +17,8 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
-    curl \
     supervisor \
     nginx \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Node.js 20.x
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g pnpm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for Python package management
@@ -27,15 +29,9 @@ COPY engine/pyproject.toml engine/pyproject.toml
 COPY engine/src engine/src
 RUN cd engine && uv pip install --system .
 
-# Copy web app code and build it
-COPY web/package.json web/pnpm-lock.yaml web/
-WORKDIR /app/web
-RUN pnpm install --frozen-lockfile
-
-COPY web/ /app/web/
-# Set environment variable for API base URL to use relative path
-ENV VITE_API_BASE_URL=/api/v1
-RUN pnpm build
+# Copy pre-built web app (must be built on host first)
+# If web/dist doesn't exist, create a placeholder
+COPY web/dist /app/web/dist
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/sites-available/default
