@@ -8,6 +8,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
 
 USE_DOCKER=0
+USE_CONTAINER=0
 SKIP_ENGINE=0
 SKIP_WEB=0
 
@@ -15,6 +16,9 @@ for arg in "$@"
 do
     if [ "$arg" == "--docker" ]; then
         USE_DOCKER=1
+    fi
+    if [ "$arg" == "--container" ]; then
+        USE_CONTAINER=1
     fi
     if [ "$arg" == "--no-engine" ]; then
         SKIP_ENGINE=1
@@ -30,7 +34,47 @@ if [ ! -d "holon_data" ]; then
     mkdir holon_data
 fi
 
-if [ $USE_DOCKER -eq 1 ]; then
+if [ $USE_CONTAINER -eq 1 ]; then
+    echo "🐳 Starting Holon unified container..."
+    
+    CONTAINER_NAME="holon-unified"
+    
+    # Check if container is already running
+    if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        echo "Stopping existing container..."
+        docker stop ${CONTAINER_NAME} > /dev/null 2>&1 || true
+        docker rm ${CONTAINER_NAME} > /dev/null 2>&1 || true
+    fi
+    
+    echo "Building unified container image..."
+    if ! docker build -f Dockerfile.unified -t holon-unified:latest . > /dev/null 2>&1; then
+        echo ""
+        echo "❌ Failed to build container. Retrying with full logging to diagnose:"
+        docker build -f Dockerfile.unified -t holon-unified:latest .
+        exit 1
+    fi
+    
+    echo "Starting container..."
+    docker run -d \
+        --name ${CONTAINER_NAME} \
+        -p 80:80 \
+        -v "${PROJECT_ROOT}/holon_data:/app/holon_data" \
+        holon-unified:latest
+    
+    echo ""
+    echo "----------------------------------------------------------------"
+    echo "🚀 Holon unified container is ready!"
+    echo "----------------------------------------------------------------"
+    echo "📱 Web Dashboard:  http://localhost"
+    echo "🔌 API Swagger UI: http://localhost/docs"
+    echo ""
+    echo "Commands:"
+    echo "  - View logs:    docker logs -f ${CONTAINER_NAME}"
+    echo "  - Stop:         docker stop ${CONTAINER_NAME}"
+    echo "  - Remove:       docker rm ${CONTAINER_NAME}"
+    echo "----------------------------------------------------------------"
+
+elif [ $USE_DOCKER -eq 1 ]; then
     echo "🐳 Starting Holon services with Docker..."
 
     SERVICES=""
