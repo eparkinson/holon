@@ -46,6 +46,21 @@ if [ $USE_CONTAINER -eq 1 ]; then
         docker rm ${CONTAINER_NAME} > /dev/null 2>&1 || true
     fi
     
+    # Build web app if dist directory doesn't exist
+    if [ ! -d "web/dist" ]; then
+        echo "Building web app..."
+        cd web
+        if command -v pnpm &> /dev/null; then
+            pnpm install && pnpm build
+        elif command -v npm &> /dev/null; then
+            npm install && npm run build
+        else
+            echo "❌ Neither pnpm nor npm found. Please install Node.js and npm/pnpm first."
+            exit 1
+        fi
+        cd ..
+    fi
+    
     echo "Building unified container image..."
     if ! docker build -f Dockerfile.unified -t holon-unified:latest . > /dev/null 2>&1; then
         echo ""
