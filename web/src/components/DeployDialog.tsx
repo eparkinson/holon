@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,6 +20,7 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
   const [envVars, setEnvVars] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -52,9 +53,15 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
     for (const line of lines) {
       const trimmedLine = line.trim();
       if (trimmedLine && !trimmedLine.startsWith('#')) {
-        const [key, ...valueParts] = trimmedLine.split('=');
-        if (key && valueParts.length > 0) {
-          envVarsObj[key.trim()] = valueParts.join('=').trim();
+        const equalIndex = trimmedLine.indexOf('=');
+        if (equalIndex > 0) {
+          const key = trimmedLine.substring(0, equalIndex).trim();
+          const value = trimmedLine.substring(equalIndex + 1).trim();
+          
+          // Basic validation: key should contain only alphanumeric characters and underscores
+          if (key && /^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+            envVarsObj[key] = value;
+          }
         }
       }
     }
@@ -151,6 +158,7 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
               <Label htmlFor="file-upload">Upload YAML File</Label>
               <div className="flex items-center gap-2">
                 <Input
+                  ref={fileInputRef}
                   id="file-upload"
                   type="file"
                   accept=".yaml,.yml"
@@ -163,10 +171,7 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
                   variant="outline"
                   size="icon"
                   disabled={isSubmitting}
-                  onClick={() => {
-                    const input = document.getElementById('file-upload') as HTMLInputElement;
-                    input?.click();
-                  }}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="h-4 w-4" />
                 </Button>
