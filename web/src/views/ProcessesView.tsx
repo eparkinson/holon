@@ -4,6 +4,7 @@ import { Play, FileText, Eye, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/services/api';
 import type { ProcessSummary } from '@/types/api';
+import { DeployDialog } from '@/components/DeployDialog';
 
 // Syntax highlighter component
 const YamlViewer = ({ content }: { content: string }) => {
@@ -49,21 +50,24 @@ export function ProcessesView() {
   // New state for modal
   const [selectedProcess, setSelectedProcess] = useState<{name: string, yaml: string} | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
+  
+  // State for deploy dialog
+  const [isDeployDialogOpen, setIsDeployDialogOpen] = useState(false);
+
+  const fetchProcesses = async () => {
+    try {
+      setLoading(true);
+      const data = await apiClient.listProcesses();
+      setProcesses(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load processes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProcesses = async () => {
-      try {
-        setLoading(true);
-        const data = await apiClient.listProcesses();
-        setProcesses(data);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load processes');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProcesses();
   }, []);
 
@@ -97,7 +101,7 @@ export function ProcessesView() {
             Manage your deployed Holon configurations
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsDeployDialogOpen(true)}>
           <FileText className="mr-2 h-4 w-4" />
           Deploy New Process
         </Button>
@@ -123,7 +127,7 @@ export function ProcessesView() {
               <p className="text-sm text-muted-foreground mt-2">
                 Get started by deploying your first holon.yaml configuration
               </p>
-              <Button className="mt-4">Deploy Process</Button>
+              <Button className="mt-4" onClick={() => setIsDeployDialogOpen(true)}>Deploy Process</Button>
             </div>
           </CardContent>
         </Card>
@@ -180,6 +184,16 @@ export function ProcessesView() {
             </div>
         </div>
       )}
+      
+      {/* Deploy Dialog */}
+      <DeployDialog
+        isOpen={isDeployDialogOpen}
+        onClose={() => setIsDeployDialogOpen(false)}
+        onSuccess={() => {
+          // Refresh the processes list after successful deployment
+          fetchProcesses();
+        }}
+      />
     </div>
   );
 }

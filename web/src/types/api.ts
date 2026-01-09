@@ -38,6 +38,7 @@ export interface TraceEvent {
 export interface DeployRequest {
   name: string;
   config_yaml: string;
+  env_vars?: Record<string, string>;
 }
 
 export interface DeployResponse {
