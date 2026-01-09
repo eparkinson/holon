@@ -8,6 +8,9 @@ import { Upload, X, FileText } from 'lucide-react';
 import { apiClient } from '@/services/api';
 import type { DeployRequest } from '@/types/api';
 
+// Validation pattern for environment variable keys
+const ENV_VAR_KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 interface DeployDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -58,8 +61,8 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
           const key = trimmedLine.substring(0, equalIndex).trim();
           const value = trimmedLine.substring(equalIndex + 1).trim();
           
-          // Basic validation: key should contain only alphanumeric characters and underscores
-          if (key && /^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+          // Validate key follows environment variable naming conventions
+          if (key && ENV_VAR_KEY_PATTERN.test(key)) {
             envVarsObj[key] = value;
           }
         }
@@ -209,7 +212,7 @@ export function DeployDialog({ isOpen, onClose, onSuccess }: DeployDialogProps) 
               </Label>
               <Textarea
                 id="env-vars"
-                placeholder="API_KEY=your_key_here&#10;WEBHOOK_TOKEN=token123"
+                placeholder={`API_KEY=your_key_here\nWEBHOOK_TOKEN=token123`}
                 value={envVars}
                 onChange={(e) => setEnvVars(e.target.value)}
                 disabled={isSubmitting}
