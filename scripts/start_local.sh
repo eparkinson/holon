@@ -40,7 +40,7 @@ if [ $USE_CONTAINER -eq 1 ]; then
     CONTAINER_NAME="holon-unified"
     
     # Check if container is already running
-    if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    if docker ps -a --filter "name=^${CONTAINER_NAME}$" --format '{{.Names}}' | grep -q "${CONTAINER_NAME}"; then
         echo "Stopping existing container..."
         docker stop ${CONTAINER_NAME} > /dev/null 2>&1 || true
         docker rm ${CONTAINER_NAME} > /dev/null 2>&1 || true
