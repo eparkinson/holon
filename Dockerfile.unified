@@ -42,6 +42,9 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 # Create directories for logs and data
 RUN mkdir -p /app/holon_data /var/log/supervisor
 
+# Set default environment variable for storage
+ENV HOLON_STORAGE_URI=file:///app/holon_data
+
 WORKDIR /app
 
 # Expose port 80 for nginx
