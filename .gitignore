@@ -72,3 +72,4 @@ yarn-error.log*
 
 # Holon Data
 holon_data/
+secrets.yaml
