@@ -266,11 +266,11 @@ holon test
 - Sample agents demonstrating capabilities
 - Basic test suite
 
-### 🚧 In Progress / Planned
-- **Phase 3**: Docker containerization
+### 🚧 Planned / Not Yet Implemented
+- **Phase 2**: Tool interface implementation (support for Holon-side and model-side tools)
+- **Phase 3**: Docker containerization and deployment
 - **Phase 3**: Full deployment functionality
-- **Phase 2**: Tool interface implementation
-- **Phase 4**: Production examples and documentation
+- **Phase 4**: Production examples and additional documentation
 
 See `docs/PLAN.md` for detailed roadmap.
 
