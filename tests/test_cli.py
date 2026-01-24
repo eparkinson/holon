@@ -12,7 +12,7 @@ runner = CliRunner()
 
 # Get the repository root (two levels up from this file)
 REPO_ROOT = Path(__file__).parent.parent
-SAMPLES_DIR = REPO_ROOT / "test" / "samples"
+SAMPLES_DIR = REPO_ROOT / "tests" / "samples"
 
 
 def test_version_command():
