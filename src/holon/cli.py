@@ -9,6 +9,7 @@ import typer
 from rich.console import Console
 
 from . import __version__
+from .deployer import Deployer
 from .parser import Parser
 from .runtime import Runtime
 
@@ -119,9 +120,22 @@ def deploy(file_path: str = typer.Argument(..., help="Path to agent markdown fil
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1)
 
-    # Placeholder for actual deployment logic (Phase 3)
-    console.print("\n[yellow]Note:[/yellow] Docker deployment is planned for Phase 3.")
-    console.print("For now, use 'holon test' to run agents locally.")
+    # Check if Docker is available
+    import shutil
+    if not shutil.which("docker"):
+        console.print("\n[red]Error:[/red] Docker is not installed or not in PATH.")
+        console.print("Please install Docker to use the deploy command.")
+        console.print("For now, you can use 'holon test' to run agents locally.")
+        raise typer.Exit(code=1)
+
+    # Deploy the agent
+    try:
+        console.print("\n[cyan]Building Docker image...[/cyan]")
+        deployer = Deployer(agent, Path(file_path))
+        deployer.deploy(interactive=True)
+    except Exception as e:
+        console.print(f"\n[red]Deployment failed:[/red] {e}")
+        raise typer.Exit(code=1)
 
 
 def main():
