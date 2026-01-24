@@ -115,11 +115,24 @@ class Runtime:
             
             # Handle tool calls if present
             if hasattr(message, 'tool_calls') and message.tool_calls:
+                # Convert tool_calls to a serializable format
+                tool_calls_dict = [
+                    {
+                        "id": tc.id,
+                        "type": tc.type,
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments
+                        }
+                    }
+                    for tc in message.tool_calls
+                ]
+                
                 # Add the assistant's response with tool calls to history
                 self.conversation_history.append({
                     "role": "assistant",
                     "content": message.content,
-                    "tool_calls": message.tool_calls
+                    "tool_calls": tool_calls_dict
                 })
                 
                 # Execute each tool call
