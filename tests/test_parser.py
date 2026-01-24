@@ -9,9 +9,14 @@ from holon.parser import Parser
 from holon.models import AgentConfig, AgentDefinition
 
 
+# Get the repository root (two levels up from this file)
+REPO_ROOT = Path(__file__).parent.parent
+SAMPLES_DIR = REPO_ROOT / "test" / "samples"
+
+
 def test_parse_echo_agent():
     """Test parsing the echo agent sample."""
-    agent = Parser.parse_file("test/samples/01_echo/echo.md")
+    agent = Parser.parse_file(SAMPLES_DIR / "01_echo" / "echo.md")
     
     assert agent.config.id == "echo"
     assert agent.config.type == "agent"
@@ -22,7 +27,7 @@ def test_parse_echo_agent():
 
 def test_parse_researcher_agent():
     """Test parsing the researcher agent with tools."""
-    agent = Parser.parse_file("test/samples/02_collaborators/researcher.md")
+    agent = Parser.parse_file(SAMPLES_DIR / "02_collaborators" / "researcher.md")
     
     assert agent.config.id == "researcher"
     assert agent.config.model == "perplexity-sonar-reasoning"
@@ -32,7 +37,7 @@ def test_parse_researcher_agent():
 
 def test_parse_manager_agent():
     """Test parsing the manager agent."""
-    agent = Parser.parse_file("test/samples/03_complex_network/manager.md")
+    agent = Parser.parse_file(SAMPLES_DIR / "03_complex_network" / "manager.md")
     
     assert agent.config.id == "manager"
     assert agent.config.model == "o1-preview"

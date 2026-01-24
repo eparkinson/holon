@@ -3,12 +3,17 @@ Tests for CLI commands.
 """
 
 import pytest
+from pathlib import Path
 from typer.testing import CliRunner
 
 from holon.cli import app
 
 
 runner = CliRunner()
+
+# Get the repository root (two levels up from this file)
+REPO_ROOT = Path(__file__).parent.parent
+SAMPLES_DIR = REPO_ROOT / "test" / "samples"
 
 
 def test_version_command():
@@ -20,7 +25,8 @@ def test_version_command():
 
 def test_deploy_command_with_valid_file():
     """Test deploy command with a valid agent file."""
-    result = runner.invoke(app, ["deploy", "test/samples/01_echo/echo.md"])
+    test_file = str(SAMPLES_DIR / "01_echo" / "echo.md")
+    result = runner.invoke(app, ["deploy", test_file])
     assert result.exit_code == 0
     assert "Deploying agent from:" in result.stdout
     assert "✓ Parsed agent: echo" in result.stdout
