@@ -2,6 +2,7 @@
 Tests for CLI commands.
 """
 
+import os
 import tempfile
 from pathlib import Path
 from typer.testing import CliRunner
@@ -50,8 +51,6 @@ def test_deploy_command_with_invalid_file():
 
 def test_test_command_with_folder_single_file():
     """Test test command with a folder containing a single markdown file."""
-    import os
-
     # Save original API key
     original_key = os.environ.get("OPENAI_API_KEY")
 
@@ -93,8 +92,6 @@ def test_test_command_with_folder_no_files():
 
 def test_test_command_with_env_file():
     """Test test command with --env parameter."""
-    import os
-
     # Save original API key
     original_key = os.environ.get("OPENAI_API_KEY")
 
@@ -127,8 +124,6 @@ def test_test_command_with_env_file():
 
 def test_test_command_missing_api_key():
     """Test test command fails when required API key is missing."""
-    import os
-
     # Save original API key
     original_key = os.environ.get("OPENAI_API_KEY")
 
