@@ -2,6 +2,7 @@
 Tests for CLI commands.
 """
 
+import tempfile
 from pathlib import Path
 from typer.testing import CliRunner
 
@@ -59,8 +60,6 @@ def test_test_command_with_folder_multiple_files():
 def test_test_command_with_folder_no_files():
     """Test test command with a folder containing no markdown files."""
     # Create a temporary directory with no .md files
-    import tempfile
-
     with tempfile.TemporaryDirectory() as tmpdir:
         result = runner.invoke(app, ["test", tmpdir])
         assert result.exit_code == 1
