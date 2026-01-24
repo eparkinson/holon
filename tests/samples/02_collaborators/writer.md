@@ -2,9 +2,6 @@
 id: writer
 type: agent
 model: claude-3-5-sonnet
-context:
-  - source: researcher
-    mode: append
 ---
 
 # Technical Writer

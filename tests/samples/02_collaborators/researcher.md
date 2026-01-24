@@ -2,8 +2,12 @@
 id: researcher
 type: agent
 model: perplexity-sonar-reasoning
+trigger:
+  type: chat
 tools:
   - web_search
+downstream:
+  - writer
 ---
 
 # Research Assistant

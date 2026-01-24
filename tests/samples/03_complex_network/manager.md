@@ -2,6 +2,11 @@
 id: manager
 type: agent
 model: o1-preview
+trigger:
+  type: chat
+downstream:
+  - architect
+  - po
 ---
 
 # Engineering Manager

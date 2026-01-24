@@ -2,6 +2,8 @@
 id: echo
 type: agent
 model: gpt-4o-mini
+trigger:
+  type: chat
 ---
 
 # Echo Bot
