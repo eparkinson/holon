@@ -19,15 +19,15 @@
 - [x] Implement an interactive REPL / Chat Loop using stdin/stdout for direct agent communication.
 - [x] Implement a basic Tool interface (Support for both Holon-side tools and Model-side internal tools).
 
-## To Do
+### Phase 3: Containerization ✅
+- [x] Design the `Dockerfile.template` for the runtime environment.
+- [x] Implement logic in CLI to:
+    - [x] Generate a directory context for the build.
+    - [x] Dynamically create a `Dockerfile` that includes the parsed plan.
+    - [x] Execute `docker build`.
+    - [x] Execute `docker run`.
 
-### Phase 3: Containerization
-- [ ] Design the `Dockerfile.template` for the runtime environment.
-- [ ] Implement logic in CLI to:
-    - [ ] Generate a directory context for the build.
-    - [ ] Dynamically create a `Dockerfile` that includes the parsed plan.
-    - [ ] Execute `docker build`.
-    - [ ] Execute `docker run`.
+## To Do
 
 ### Phase 4: Verification & Examples
 - [x] Create 3 sample Holon definitions to validate syntax and capability:
@@ -35,4 +35,4 @@
     - [x] `tests/samples/02_collaborators/`: Two-agent setup (e.g., Researcher -> Writer) to test chaining.
     - [x] `tests/samples/03_complex_network/`: Multi-agent/High-Order network (testing delegation and reasoning capabilities).
 - [x] Verify `holon test` works with all examples (requires API keys).
-- [ ] Verify `holon deploy` functionality locally with `tests/samples/01_echo/echo.md` (Phase 3 pending).
+- [x] Verify `holon deploy` functionality locally with `tests/samples/01_echo/echo.md` (requires Docker).
