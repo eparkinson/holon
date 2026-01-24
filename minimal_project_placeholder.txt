@@ -1,0 +1,8 @@
+# This is a placeholder for deleting old files
+
+# Keeping only the following files:
+# - README.md
+# - LICENSE
+# - .gitignore
+
+# The other files and folders have been deleted to start fresh.
