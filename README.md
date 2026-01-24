@@ -64,7 +64,7 @@ Getting your agent network live is as simple as publishing a blog post.
 **1. Install the CLI**
 
 ```bash
-pip install holon
+uv pip install holon
 ```
 
 **2. Save your Plan**
@@ -110,7 +110,7 @@ You can now:
 ```bash
 git clone https://github.com/eparkinson/holon.git
 cd holon
-pip install -e .
+uv pip install -e .
 ```
 
 ### Test an Agent Locally
@@ -136,8 +136,8 @@ The repository includes three example agents to demonstrate different capabiliti
 ### Running Tests
 
 ```bash
-pip install pytest
-pytest tests/ -v
+uv pip install pytest
+uv run pytest tests/ -v
 ```
 
 ## 🚀 Roadmap

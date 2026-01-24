@@ -48,7 +48,7 @@ holon/
 
 ### Prerequisites
 - Python 3.9 or higher
-- pip for package management
+- uv for package management (recommended) or pip
 
 ### Installation
 
@@ -58,33 +58,33 @@ git clone https://github.com/eparkinson/holon.git
 cd holon
 
 # Install in editable mode
-pip install -e .
+uv pip install -e .
 
 # Install development dependencies
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
 ```
 
 ### Running Tests
 
 ```bash
 # Run all tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run specific test file
-pytest tests/test_parser.py -v
+uv run pytest tests/test_parser.py -v
 
 # Run with coverage
-pytest tests/ --cov=holon --cov-report=html
+uv run pytest tests/ --cov=holon --cov-report=html
 ```
 
 ### Code Quality
 
 ```bash
 # Format code with black
-black src/ tests/
+uv run black src/ tests/
 
 # Lint with ruff
-ruff check src/ tests/
+uv run ruff check src/ tests/
 
 # Both tools are configured in pyproject.toml
 ```
