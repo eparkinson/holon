@@ -1,10 +1,19 @@
-# Holon
+# Holon: Orchestrating AI Agents with Markdown Simplicity
 
-> **Stop Building Tools. Start Orchestrating Services.**
+**Holon is an open-source Agent Orchestration Engine for Higher-Order AI Agents.**
 
-Holon is an open-source **Agent Orchestration Engine** for Higher-Order AI Agents. It allows developers to compose autonomous, "batteries-included" agent services (like Perplexity, Grok, and Jules) into complex workflows using a declarative configuration syntax, rather than writing imperative glue code.
+The landscape of AI automation is evolving rapidly. As our systems become more capable, the challenge is shifting from “how do I use this tool?” to “how can I make all these tools and agents work together?” Holon is built to answer that question—with a focus on **developer experience, transparency, and the power of simple text files**.
 
----
+## The Vision
+
+**Holon** isn’t just another AI framework. It’s a rethink of how we design, share, and orchestrate AI agents. Instead of wrangling imperative glue code and endless pipelines, Holon lets you define networks of autonomous agents **using nothing more than Markdown documents with YAML metadata**.
+
+### Why Markdown + YAML?
+
+- **Human-Readable:** Your agent’s goals, behaviors, and prompts live alongside its config, in plain English.
+- **Portable:** One file contains both documentation and executable specification.
+- **Extensible:** Add prompt examples, usage notes, diagrams, and more—your format is as simple or rich as you need.
+- **LLM-Ready:** Rich Markdown context enables better utilization and understanding by LLMs themselves.
 
 ## 🧠 The Philosophy
 
@@ -15,48 +24,7 @@ The name comes from Arthur Koestler's systems theory, first introduced in his 19
 
 Holon treats AI models not as text generators that need to be micromanaged with Python scripts, but as **Microservices** that need to be orchestrated.
 
----
-
-## 🚀 Local Development
-
-Get Holon up and running on your local machine quickly.
-
-### Prerequisites
-
-*   **Docker & Docker Compose**
-*   **Linux/WSL, MacOS** (Windows support coming soon)
-
-### Quick Start
-
-1.  **Start the Platform:**
-    This script bootstraps the Engine and Web Dashboard. By default, it runs them locally (using `uv` and `pnpm`) for a fast development loop.
-
-    ```bash
-    # Start in Local Mode (Default)
-    ./scripts/start_local.sh
-
-    # Start in Docker Mode
-    ./scripts/start_local.sh --docker
-    ```
-
-    Once started:
-    *   **Web Dashboard:** [http://localhost:3000](http://localhost:3000)
-    *   **API Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-
-2.  **Use the CLI:**
-    We provide a wrapper script that handles the Python environment for you.
-
-    ```bash
-    # Check version
-    ./scripts/holon_local.sh --version
-
-    # List available commands
-    ./scripts/holon_local.sh --help
-    ```
-
----
-
-## ⚡ The Shift
+**The Shift**
 
 | The Old Way (Legacy Frameworks) | The Holon Way (Federated Architecture) |
 |--------------------------------|----------------------------------------|
@@ -64,206 +32,69 @@ Get Holon up and running on your local machine quickly.
 | **Fragile Monolith:** If the scraper breaks, your agent dies. | **Robust Federation:** The Service owns the stack. You just handle the input/output contract. |
 | **Imperative Python:** `if agent_a_result then call_agent_b()` | **Declarative YAML:** `type: scatter-gather` |
 
+## How Does It Work?
+
+A Holon agent or network is described with a Markdown file containing structured YAML frontmatter:
+
+```markdown
 ---
-
-## 🔗 Interfaces & Triggers
-
-A Holon Network is inert until stimulated. Holon provides standard connectors to trigger your agentic workflows via 5 core interfaces. These are defined in your configuration, allowing the same logic to run via CLI, API, or Chat.
-
-### 1. Headless Automation (CLI & Cron)
-
-Run deep research tasks overnight or trigger workflows via CI/CD pipelines.
-
-```yaml
-# holon.yaml
+id: analyst
+type: agent
+model: claude-3-5-sonnet
 trigger:
   type: schedule
-  cron: "0 6 * * *" # Run every morning at 6 AM
-  input_context: "Daily Market Research for ticker: $NVDA"
+  cron: "0 9 * * *"
+tools:
+  - postgres_mcp
+  - slack_mcp
+---
+
+# Data Analyst Agent
+
+You’re an autonomous agent responsible for generating daily business intelligence reports, sharing insights with stakeholders via Slack...
 ```
 
-**Usage:** `holon run workflow.yaml --headless`
+- **Frontmatter:** Machine-parsable metadata (id, model, trigger, etc).
+- **Markdown Body:** Prompts, goals, instructions, examples—everything the agent needs to know and everything a human needs to understand.
 
-### 2. REST API Gateway
+## ⚡ Quick Start
 
-Expose your Holon Network as a microservice.
+Getting your agent network live is as simple as publishing a blog post.
 
-- **Process Mode:** Trigger a specific, rigid workflow (e.g., "Onboarding Flow").
-- **Prompt Mode:** Accept a raw prompt and route it dynamically.
+**1. Install the CLI**
 
-```yaml
-trigger:
-  type: webhook
-  route: "/api/v1/analyze"
-  auth_token: ${API_SECRET}
+```bash
+pip install holon
 ```
 
-**Usage:** `POST /api/v1/analyze { "topic": "React 19" }`
+**2. Save your Plan**
 
-### 3. Enterprise ChatOps (Slack / Teams / WhatsApp)
+Copy the example agent above and save it as `analyst.md`.
 
-Integrate the Holon Network directly into your team's communication channels. The framework handles the WebSocket connections and message history context.
+**3. Deploy**
 
-```yaml
-trigger:
-  type: adapter
-  platform: slack
-  channel: "#engineering-intel"
-  mode: "mention" # Only wake up when @Holon is tagged
+```bash
+holon deploy analyst.md
 ```
 
-### 4. Custom Web Interface
+Holon parses your markdown instructions, checks the required tools, and launches the agent. You'll instantly get a live endpoint and a dashboard to watch your analyst go to work.
 
-Embed a Holon workflow into your own SaaS or internal dashboard using the React/Vue SDK. Supports streaming responses and "Human-in-the-Loop" pauses.
+## 🏗️ High-Level Architecture
 
-```yaml
-trigger:
-  type: websocket
-  cors: ["*.mycompany.com"]
-```
+When you run `holon deploy`, the system performs a key transformation: it compiles your Markdown specifications into a robust execution environment.
 
-### 5. Social & Event Watchers
+- **Single Docker Container:** The Holon CLI builds a comprehensive Docker container that encapsulates your entire agent network, runtime dependencies, and tool connectors.
+- **Local Execution:** You can run this container purely locally. This means you can test complex agent interactions on your machine with zero cloud latency or cost.
+- **Remote Deployment:** Because it's just a standard container, you can deploy your Holon network anywhere—AWS ECS, Google Cloud Run, a DigitalOcean Droplet, or your customized VPS.
 
-Passive monitoring triggers that wake up the network based on external signals.
+Your agent network becomes a single, portable artifact that behaves exactly the same in production as it does on your laptop.
 
-```yaml
-trigger:
-  type: watcher
-  source: twitter_stream
-  keywords: ["@MyCompany", "MyProduct Bug"]
-  action: "trigger_incident_response_workflow"
-```
+## A Clean Start
+
+This new version of Holon starts from a blank slate. We’ve kept only the essentials so you can shape your agent network, workflows, and knowledge in a format that’s as easy to write as your favorite blog post.
+
+> **Stop Building Glue Code. Start Writing Intelligence.**
 
 ---
 
-## 🚀 Quick Start Configuration
-
-Holon uses **HolonDSL**—a YAML-based schema to define your Agent Organization.
-
-```yaml
-version: "1.0"
-project: "Market-Intelligence-Brief"
-
-# 1. INPUT INTERFACE
-trigger:
-  type: slack
-  channel: "#market-news"
-
-# 2. THE FEDERATION (The "Wholes")
-resources:
-  - id: researcher
-    provider: perplexity
-    model: sonar-reasoning
-  - id: sentiment_analyst
-    provider: grok
-    model: grok-beta
-  - id: strategist
-    provider: claude
-    model: 3-5-sonnet
-
-# 3. THE WORKFLOW (The "Parts")
-workflow:
-  type: sequential
-  steps:
-    # SCATTER: Run Research and Social analysis in parallel
-    - id: gather_intelligence
-      type: scatter-gather
-      parallel_tasks:
-        - agent: researcher
-          instruction: "Find technical specs for {trigger.input}."
-        - agent: sentiment_analyst
-          instruction: "What is the sentiment regarding {trigger.input}?"
-      
-    # GATHER & SYNTHESIZE
-    - id: draft_strategy
-      agent: strategist
-      inputs: [gather_intelligence.results]
-      instruction: "Draft a strategy report based on these findings."
-```
-
----
-
-## 🏗 Architecture
-
-Holon operates as a **Control Plane** (or *NeuroPlane*) for intelligence.
-
-- **The Gateway:** A unified API adapter that handles the "Handshake" between different providers. It ensures that Grok's output is formatted correctly before being passed to Jules.
-- **The Router:** Determines which workflow to trigger based on the input interface (API vs. Slack vs. Cron).
-- **The Blackboard:** A shared state manager that allows agents to collaborate asynchronously without direct dependency.
-
-### Supported Patterns
-
-Holon natively supports the 5 Core Collaboration Patterns:
-
-| Pattern | Description |
-|---------|-------------|
-| **Chain** | Sequential Handoffs |
-| **Scatter-Gather** | Parallel execution & synthesis |
-| **Debate** | Iterative loops (Builder vs. Critic) for code/security |
-| **Blackboard** | Event-driven shared state |
-| **Dynamic** | Runtime delegation (The "Manager" decides who to call) |
-
----
-
-## 🔌 The "Batteries Included" Registry
-
-Holon is built to connect with **Agent Services**, not just LLMs.
-
-| Category | Services |
-|----------|----------|
-| **Research** | Perplexity, Google Gemini (Grounding) |
-| **Coding** | Jules (Google), Devin, GitHub Copilot Workspace |
-| **Social** | Grok (xAI) |
-| **Data** | Julius AI, ChatGPT Data Analyst |
-| **Legal** | Harvey, CoCounsel |
-| **Enterprise** | Salesforce Agentforce, Microsoft 365 Copilot |
-
-### 🛠️ Model Context Protocol (MCP) Support
-
-Holon natively supports the **Model Context Protocol (MCP)**. This allows you to mount standard tools (Postgres, GitHub, Slack) to any agent in your workflow without writing custom integration code.
-
-```yaml
-resources:
-  - id: db_agent
-    provider: claude
-    model: 3-5-sonnet
-    # Connect standard MCP servers
-    tools: [postgres_mcp]
-
-  - id: postgres_mcp
-    type: mcp-server
-    command: "npx"
-    args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
-```
-
----
-
-## 📂 Project Structure
-
-Holon is organized as a monorepo to ensure unified versioning and atomic updates across the stack.
-
-```text
-holon/
-├── cli/                 # Python (Typer) - The developer command line tool
-│   ├── pyproject.toml
-│   └── src/
-├── engine/              # Python (FastAPI) - The core orchestration service
-│   ├── pyproject.toml
-│   └── src/
-├── web/                 # React (Vite + DeepChat) - The dashboard & chat UI
-│   ├── package.json
-│   └── src/
-├── samples/             # Example holon.yaml configurations
-├── docs/               # Design specifications and architecture docs
-└── docker-compose.yaml  # Orchestrates Engine + Web for local dev
-```
-
----
-
-## License
-
-MIT License.
-
----
-
-> **Holon** — *The Whole is Greater than the Sum of its Parts.*
+Ready to help shape the future of agent orchestration? [Get started with Holon](https://github.com/eparkinson/holon), explore example agents, or contribute your own!
