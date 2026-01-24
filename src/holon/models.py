@@ -3,7 +3,7 @@ Pydantic models for agent configuration validation.
 """
 
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class TriggerConfig(BaseModel):
@@ -14,6 +14,8 @@ class TriggerConfig(BaseModel):
 
 class AgentConfig(BaseModel):
     """Configuration parsed from agent markdown frontmatter."""
+    model_config = ConfigDict(extra="allow")  # Allow extra fields for future extensibility
+    
     id: str = Field(..., description="Unique identifier for the agent")
     type: str = Field(default="agent", description="Type of holon (agent, network)")
     model: str = Field(..., description="LLM model to use (e.g., gpt-4o-mini, claude-3-5-sonnet)")
@@ -21,9 +23,6 @@ class AgentConfig(BaseModel):
     tools: Optional[List[str]] = Field(default=None, description="List of tools available to the agent")
     upstream: Optional[List[str]] = Field(default=None, description="List of upstream agent IDs")
     downstream: Optional[List[str]] = Field(default=None, description="List of downstream agent IDs")
-    
-    class Config:
-        extra = "allow"  # Allow extra fields for future extensibility
 
 
 class AgentDefinition(BaseModel):
