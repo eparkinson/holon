@@ -98,3 +98,53 @@ This new version of Holon starts from a blank slate. We’ve kept only the essen
 ---
 
 Ready to help shape the future of agent orchestration? [Get started with Holon](https://github.com/eparkinson/holon), explore example agents, or contribute your own!
+
+## 📚 Current Status & Usage
+
+**Phase 1 Implementation Complete!** ✅
+
+You can now:
+
+### Install from Source
+
+```bash
+git clone https://github.com/eparkinson/holon.git
+cd holon
+pip install -e .
+```
+
+### Test an Agent Locally
+
+```bash
+# Set your API key (e.g., for OpenAI)
+export OPENAI_API_KEY="your-key-here"
+
+# Run the echo bot
+holon test test/samples/01_echo/echo.md
+```
+
+This launches an interactive chat session where you can talk to the agent. The agent's behavior is defined entirely by the markdown file.
+
+### Explore Sample Agents
+
+The repository includes three example agents to demonstrate different capabilities:
+
+- **`test/samples/01_echo/echo.md`**: A simple echo bot (great for testing)
+- **`test/samples/02_collaborators/`**: Multi-agent collaboration example
+- **`test/samples/03_complex_network/`**: Complex agent network with delegation
+
+### Running Tests
+
+```bash
+pip install pytest
+pytest tests/ -v
+```
+
+## 🚀 Roadmap
+
+- ✅ **Phase 1**: Foundation & CLI - Complete!
+- ✅ **Phase 2**: Agent Runtime - Complete!
+- 🚧 **Phase 3**: Containerization - Coming soon
+- 🚧 **Phase 4**: Production examples & documentation
+
+See [PLAN.md](docs/PLAN.md) for the complete roadmap.

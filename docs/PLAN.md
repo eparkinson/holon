@@ -1,25 +1,24 @@
 # Holon POC Implementation Plan
 
 ## Done
-(No items yet)
+
+### Phase 1: Foundation & CLI ✅
+- [x] Initialize Python project structure (`pyproject.toml`, `src/`).
+- [x] Create basic `holon` CLI entry point using `Typer` or `Click`.
+- [x] Implement `holon test` command to compile local markdown files and launch interactive chat interface.
+- [x] Implement `holon deploy <file>` command structure.
+- [x] Implement `Parser` module to extract YAML frontmatter and Markdown body from `.md` files.
 
 ## To Do
 
-### Phase 1: Foundation & CLI
-- [ ] Initialize Python project structure (`pyproject.toml`, `src/`).
-- [ ] Create basic `holon` CLI entry point using `Typer` or `Click`.
-- [ ] Implement `holon test` command to compile local markdown files and launch interactive chat interface.
-- [ ] Implement `holon deploy <file>` command structure.
-- [ ] Implement `Parser` module to extract YAML frontmatter and Markdown body from `.md` files.
-
 ### Phase 2: The Agent Runtime (Python)
-- [ ] Create `Agent` class to represent the parsed configuration and prompt.
-- [ ] Implement a basic `Runtime` engine that can:
-    - [ ] Load the `Agent` definition.
-    - [ ] Handle the `trigger` (e.g., run immediately or simplified cron).
-    - [ ] Construct the full prompt (System prompt from Markdown + Context).
-    - [ ] Call an LLM or Higher-Order Agent (using `litellm` to support reasoning/thinking models like Grok, O1).
-- [ ] Implement an interactive REPL / Chat Loop using stdin/stdout for direct agent communication.
+- [x] Create `Agent` class to represent the parsed configuration and prompt.
+- [x] Implement a basic `Runtime` engine that can:
+    - [x] Load the `Agent` definition.
+    - [x] Handle the `trigger` (e.g., run immediately or simplified cron).
+    - [x] Construct the full prompt (System prompt from Markdown + Context).
+    - [x] Call an LLM or Higher-Order Agent (using `litellm` to support reasoning/thinking models like Grok, O1).
+- [x] Implement an interactive REPL / Chat Loop using stdin/stdout for direct agent communication.
 - [ ] Implement a basic Tool interface (Support for both Holon-side tools and Model-side internal tools).
 
 ### Phase 3: Containerization
@@ -31,9 +30,9 @@
     - [ ] Execute `docker run`.
 
 ### Phase 4: Verification & Examples
-- [ ] Create 3 sample Holon definitions to validate syntax and capability:
-    - [ ] `test/samples/01_echo/echo.md`: Trivial single agent (The "Hello World" of Holon).
-    - [ ] `test/samples/02_collaborators/`: Two-agent setup (e.g., Researcher -> Writer) to test chaining.
-    - [ ] `test/samples/03_complex_network/`: Multi-agent/High-Order network (testing delegation and reasoning capabilities).
-- [ ] Verify `holon test` works with all examples.
-- [ ] Verify `holon deploy` functionality locally with `test/samples/01_echo/echo.md`.
+- [x] Create 3 sample Holon definitions to validate syntax and capability:
+    - [x] `test/samples/01_echo/echo.md`: Trivial single agent (The "Hello World" of Holon).
+    - [x] `test/samples/02_collaborators/`: Two-agent setup (e.g., Researcher -> Writer) to test chaining.
+    - [x] `test/samples/03_complex_network/`: Multi-agent/High-Order network (testing delegation and reasoning capabilities).
+- [x] Verify `holon test` works with all examples (requires API keys).
+- [ ] Verify `holon deploy` functionality locally with `test/samples/01_echo/echo.md` (Phase 3 pending).
