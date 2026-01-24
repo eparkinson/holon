@@ -10,6 +10,7 @@ from rich.console import Console
 
 from . import __version__
 from .deployer import Deployer
+from .env_utils import apply_env_overrides, load_env_from_yaml, validate_api_key
 from .parser import Parser
 from .runtime import Runtime
 
@@ -33,7 +34,12 @@ def test(
     file_path: Optional[str] = typer.Argument(
         None,
         help="Path to agent markdown file or directory. If not provided, looks for agent definition in current directory.",
-    )
+    ),
+    env: Optional[str] = typer.Option(
+        None,
+        "--env",
+        help="Path to YAML file containing environment variables (e.g., API keys). Values from this file take precedence over environment variables.",
+    ),
 ):
     """
     Test an agent by running it in an interactive chat interface.
@@ -83,6 +89,21 @@ def test(
                     console.print(f"  - {f}")
                 raise typer.Exit(code=1)
 
+    # Load environment variables from file if provided
+    env_overrides = {}
+    if env:
+        try:
+            env_overrides = load_env_from_yaml(env)
+            console.print(f"[cyan]Loaded environment variables from:[/cyan] {env}")
+            # Apply the overrides to the environment
+            apply_env_overrides(env_overrides)
+        except FileNotFoundError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(code=1)
+        except ValueError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(code=1)
+
     # Parse the agent definition
     try:
         agent = Parser.parse_file(file_path)
@@ -91,6 +112,12 @@ def test(
         raise typer.Exit(code=1)
     except ValueError as e:
         console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(code=1)
+
+    # Validate that required API keys are available
+    error_message = validate_api_key(agent.config.model, env_overrides)
+    if error_message:
+        console.print(f"[red]Error:[/red] {error_message}")
         raise typer.Exit(code=1)
 
     # Run the interactive runtime
