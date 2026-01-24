@@ -97,7 +97,13 @@ class Runtime:
                 model=self.agent.config.model,
                 messages=self.conversation_history
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content
+            
+            # Handle None content (can happen with some models/settings)
+            if content is None:
+                return "(No response content received from model)"
+            
+            return content
         except Exception as e:
             # Provide a more helpful error message
             raise Exception(
