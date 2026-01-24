@@ -149,6 +149,7 @@ def deploy(file_path: str = typer.Argument(..., help="Path to agent markdown fil
 
     # Check if Docker is available
     import shutil
+
     if not shutil.which("docker"):
         console.print("\n[red]Error:[/red] Docker is not installed or not in PATH.")
         console.print("Please install Docker to use the deploy command.")
