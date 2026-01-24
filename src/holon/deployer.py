@@ -53,7 +53,11 @@ class Deployer:
         # Copy holon package source
         holon_src = Path(__file__).parent
         holon_dest = build_dir / "holon"
-        shutil.copytree(holon_src, holon_dest, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+        shutil.copytree(
+            holon_src,
+            holon_dest,
+            ignore=shutil.ignore_patterns('__pycache__', '*.pyc', 'templates')
+        )
         
         # Create requirements.txt
         self._create_requirements_file(build_dir / "requirements.txt")
