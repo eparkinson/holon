@@ -4,6 +4,7 @@ Runtime engine for executing Holon agents.
 
 import json
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from litellm import completion
@@ -135,24 +136,30 @@ class Runtime:
                     "tool_calls": tool_calls_dict
                 })
                 
-                # Execute each tool call
-                for tool_call in message.tool_calls:
+                # Helper function for executing a single tool
+                def execute_single_tool(tool_call):
                     function_name = tool_call.function.name
-                    function_args = json.loads(tool_call.function.arguments)
-                    
-                    # Execute the tool
                     try:
+                        function_args = json.loads(tool_call.function.arguments)
                         result = self.tool_registry.execute(function_name, **function_args)
                         tool_response = str(result)
                     except Exception as e:
                         tool_response = f"Error executing tool: {e}"
                     
-                    # Add tool response to conversation
-                    self.conversation_history.append({
+                    return {
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": tool_response
-                    })
+                    }
+
+                # Execute tool calls in parallel
+                with ThreadPoolExecutor() as executor:
+                    # Use map to preserve the order of tool calls in the results
+                    results = executor.map(execute_single_tool, message.tool_calls)
+
+                    # Add all tool responses to conversation history
+                    for result in results:
+                        self.conversation_history.append(result)
                 
                 # Get final response after tool execution
                 return self._get_llm_response()
