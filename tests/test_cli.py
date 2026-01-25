@@ -27,12 +27,12 @@ def test_deploy_command_with_valid_file():
     """Test deploy command with a valid agent file."""
     import shutil
 
-    test_file = str(SAMPLES_DIR / "01_echo" / "echo.md")
+    test_file = str(SAMPLES_DIR / "01_chat" / "chat.md")
     result = runner.invoke(app, ["deploy", test_file])
 
     # The command should parse the agent successfully
     assert "Deploying agent from:" in result.stdout
-    assert "✓ Parsed agent: echo" in result.stdout
+    assert "✓ Parsed agent: chat" in result.stdout
 
     # If Docker is not available, it should exit with code 1 and show an error
     # If Docker is available, it should attempt to build (exit code 0 or 1 depending on build success)
@@ -58,12 +58,12 @@ def test_test_command_with_folder_single_file():
         # Set a dummy API key for testing
         os.environ["OPENAI_API_KEY"] = "sk-test-key-for-testing"
 
-        test_dir = str(SAMPLES_DIR / "01_echo")
+        test_dir = str(SAMPLES_DIR / "01_chat")
         # Use input="exit\n" to immediately exit the interactive session
         result = runner.invoke(app, ["test", test_dir], input="exit\n")
         assert result.exit_code == 0
         assert "Using:" in result.stdout
-        assert "echo.md" in result.stdout
+        assert "chat.md" in result.stdout
     finally:
         # Restore original API key
         if original_key is None:
@@ -106,7 +106,7 @@ def test_test_command_with_env_file():
             env_file_path = env_file.name
 
         try:
-            test_dir = str(SAMPLES_DIR / "01_echo")
+            test_dir = str(SAMPLES_DIR / "01_chat")
             result = runner.invoke(app, ["test", test_dir, "--env", env_file_path], input="exit\n")
 
             # Should succeed with the env file
@@ -131,7 +131,7 @@ def test_test_command_missing_api_key():
         # Remove API key from environment
         os.environ.pop("OPENAI_API_KEY", None)
 
-        test_dir = str(SAMPLES_DIR / "01_echo")
+        test_dir = str(SAMPLES_DIR / "01_chat")
         result = runner.invoke(app, ["test", test_dir])
 
         # Should fail due to missing API key
@@ -148,7 +148,7 @@ def test_test_command_missing_api_key():
 
 def test_test_command_with_invalid_env_file():
     """Test test command with invalid --env file."""
-    test_dir = str(SAMPLES_DIR / "01_echo")
+    test_dir = str(SAMPLES_DIR / "01_chat")
     result = runner.invoke(app, ["test", test_dir, "--env", "nonexistent.yaml"])
 
     # Should fail due to missing env file

@@ -18,11 +18,11 @@ from .tools import ToolRegistry
 
 class Runtime:
     """Runtime engine for executing Holon agents."""
-    
+
     def __init__(self, agent: AgentDefinition, tool_registry: Optional[ToolRegistry] = None):
         """
         Initialize the runtime with an agent definition.
-        
+
         Args:
             agent: AgentDefinition to execute
             tool_registry: Optional ToolRegistry for agent tools
@@ -31,70 +31,71 @@ class Runtime:
         self.console = Console()
         self.conversation_history = []
         self.tool_registry = tool_registry or ToolRegistry()
-        
+
+        # Pre-compute tool definitions
+        self.tool_definitions = []
+        if self.agent.config.tools:
+            self.tool_definitions = self.tool_registry.get_function_definitions(
+                self.agent.config.tools
+            )
+
     def run_interactive(self):
         """
         Run an interactive REPL chat session with the agent.
         Continues until the user types 'exit' or 'quit'.
         """
-        self.console.print(Panel(
-            f"[bold cyan]Holon Agent: {self.agent.config.id}[/bold cyan]\n"
-            f"Model: {self.agent.config.model}\n"
-            f"Type 'exit' or 'quit' to end the session.",
-            title="[bold]Welcome to Holon[/bold]",
-            border_style="cyan"
-        ))
-        
+        self.console.print(
+            Panel(
+                f"[bold cyan]Holon Agent: {self.agent.config.id}[/bold cyan]\n"
+                f"Model: {self.agent.config.model}\n"
+                f"Type 'exit' or 'quit' to end the session.",
+                title="[bold]Welcome to Holon[/bold]",
+                border_style="cyan",
+            )
+        )
+
         # Initialize conversation with system prompt
-        self.conversation_history = [
-            {"role": "system", "content": self.agent.prompt}
-        ]
-        
+        self.conversation_history = [{"role": "system", "content": self.agent.prompt}]
+
         while True:
             try:
                 # Get user input
                 user_input = self.console.input("\n[bold green]You:[/bold green] ")
-                
+
                 # Check for exit commands
-                if user_input.strip().lower() in ['exit', 'quit']:
+                if user_input.strip().lower() in ["exit", "quit"]:
                     self.console.print("\n[yellow]Goodbye![/yellow]")
                     break
-                
+
                 # Skip empty inputs
                 if not user_input.strip():
                     continue
-                
+
                 # Add user message to history
-                self.conversation_history.append({
-                    "role": "user",
-                    "content": user_input
-                })
-                
+                self.conversation_history.append({"role": "user", "content": user_input})
+
                 # Get response from LLM
                 response = self._get_llm_response()
-                
+
                 # Display response
                 self.console.print(f"\n[bold blue]{self.agent.config.id}:[/bold blue]")
                 self.console.print(Markdown(response))
-                
+
                 # Add assistant response to history
-                self.conversation_history.append({
-                    "role": "assistant",
-                    "content": response
-                })
-                
+                self.conversation_history.append({"role": "assistant", "content": response})
+
             except KeyboardInterrupt:
                 self.console.print("\n\n[yellow]Interrupted. Goodbye![/yellow]")
                 break
             except Exception as e:
                 self.console.print(f"\n[red]Error: {e}[/red]")
                 # Continue the loop instead of crashing
-    
+
     def _get_llm_response(self) -> str:
         """
         Get a response from the LLM using litellm.
         Handles tool calls if the agent has tools configured.
-        
+
         Returns:
             The assistant's response text
         """
@@ -102,33 +103,28 @@ class Runtime:
             # Prepare completion parameters
             completion_params = {
                 "model": self.agent.config.model,
-                "messages": self.conversation_history
+                "messages": self.conversation_history,
             }
-            
+
             # Add tools if agent has them configured
-            if self.agent.config.tools:
-                tools = self.tool_registry.get_function_definitions(self.agent.config.tools)
-                if tools:
-                    completion_params["tools"] = tools
-            
+            if self.tool_definitions:
+                completion_params["tools"] = self.tool_definitions
+
             response = completion(**completion_params)
             message = response.choices[0].message
-            
+
             # Handle tool calls if present
-            if hasattr(message, 'tool_calls') and message.tool_calls:
+            if hasattr(message, "tool_calls") and message.tool_calls:
                 # Convert tool_calls to a serializable format
                 tool_calls_dict = [
                     {
                         "id": tc.id,
                         "type": tc.type,
-                        "function": {
-                            "name": tc.function.name,
-                            "arguments": tc.function.arguments
-                        }
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
                     }
                     for tc in message.tool_calls
                 ]
-                
+
                 # Add the assistant's response with tool calls to history
                 self.conversation_history.append({
                     "role": "assistant",
@@ -163,13 +159,13 @@ class Runtime:
                 
                 # Get final response after tool execution
                 return self._get_llm_response()
-            
+
             content = message.content
-            
+
             # Handle None content (can happen with some models/settings)
             if content is None:
                 return "(No response content received from model)"
-            
+
             return content
         except Exception as e:
             # Provide a more helpful error message

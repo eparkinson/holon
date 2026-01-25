@@ -14,11 +14,11 @@ REPO_ROOT = Path(__file__).parent.parent
 SAMPLES_DIR = REPO_ROOT / "tests" / "samples"
 
 
-def test_parse_echo_agent():
-    """Test parsing the echo agent sample."""
-    agent = Parser.parse_file(SAMPLES_DIR / "01_echo" / "echo.md")
+def test_parse_chat_agent():
+    """Test parsing the chat agent sample."""
+    agent = Parser.parse_file(SAMPLES_DIR / "01_chat" / "chat.md")
     
-    assert agent.config.id == "echo"
+    assert agent.config.id == "chat"
     assert agent.config.type == "agent"
     assert agent.config.model == "gpt-4o-mini"
     assert "Echo Bot" in agent.prompt
