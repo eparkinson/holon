@@ -9,10 +9,6 @@ import typer
 from rich.console import Console
 
 from . import __version__
-from .deployer import Deployer
-from .env_utils import apply_env_overrides, load_env_from_yaml, validate_api_key
-from .parser import Parser
-from .runtime import Runtime
 
 app = typer.Typer(
     name="holon",
@@ -89,6 +85,11 @@ def test(
                     console.print(f"  - {f}")
                 raise typer.Exit(code=1)
 
+    # Defer imports to improve startup time
+    from .env_utils import apply_env_overrides, load_env_from_yaml, validate_api_key
+    from .parser import Parser
+    from .runtime import Runtime
+
     # Load environment variables from file if provided
     env_overrides = {}
     if env:
@@ -134,6 +135,10 @@ def deploy(file_path: str = typer.Argument(..., help="Path to agent markdown fil
     deployment that can run anywhere.
     """
     console.print(f"[yellow]Deploying agent from:[/yellow] {file_path}")
+
+    # Defer imports to improve startup time
+    from .deployer import Deployer
+    from .parser import Parser
 
     # Parse the agent definition to validate it
     try:

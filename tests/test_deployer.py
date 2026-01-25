@@ -19,8 +19,8 @@ SAMPLES_DIR = REPO_ROOT / "tests" / "samples"
 def test_build_context():
     """Test that build_context creates necessary files."""
     # Parse a test agent
-    agent = Parser.parse_file(SAMPLES_DIR / "01_echo" / "echo.md")
-    deployer = Deployer(agent, SAMPLES_DIR / "01_echo" / "echo.md")
+    agent = Parser.parse_file(SAMPLES_DIR / "01_chat" / "chat.md")
+    deployer = Deployer(agent, SAMPLES_DIR / "01_chat" / "chat.md")
     
     # Create a temporary build directory
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -40,8 +40,8 @@ def test_build_context():
 
 def test_requirements_file_content():
     """Test that requirements.txt contains necessary dependencies."""
-    agent = Parser.parse_file(SAMPLES_DIR / "01_echo" / "echo.md")
-    deployer = Deployer(agent, SAMPLES_DIR / "01_echo" / "echo.md")
+    agent = Parser.parse_file(SAMPLES_DIR / "01_chat" / "chat.md")
+    deployer = Deployer(agent, SAMPLES_DIR / "01_chat" / "chat.md")
     
     with tempfile.TemporaryDirectory() as tmpdir:
         build_dir = Path(tmpdir)
@@ -60,8 +60,8 @@ def test_requirements_file_content():
 
 def test_dockerfile_exists():
     """Test that Dockerfile is created from template."""
-    agent = Parser.parse_file(SAMPLES_DIR / "01_echo" / "echo.md")
-    deployer = Deployer(agent, SAMPLES_DIR / "01_echo" / "echo.md")
+    agent = Parser.parse_file(SAMPLES_DIR / "01_chat" / "chat.md")
+    deployer = Deployer(agent, SAMPLES_DIR / "01_chat" / "chat.md")
     
     with tempfile.TemporaryDirectory() as tmpdir:
         build_dir = Path(tmpdir)
@@ -79,8 +79,8 @@ def test_dockerfile_exists():
 
 def test_holon_package_copied():
     """Test that holon package is copied to build context."""
-    agent = Parser.parse_file(SAMPLES_DIR / "01_echo" / "echo.md")
-    deployer = Deployer(agent, SAMPLES_DIR / "01_echo" / "echo.md")
+    agent = Parser.parse_file(SAMPLES_DIR / "01_chat" / "chat.md")
+    deployer = Deployer(agent, SAMPLES_DIR / "01_chat" / "chat.md")
     
     with tempfile.TemporaryDirectory() as tmpdir:
         build_dir = Path(tmpdir)
