@@ -9,5 +9,5 @@ trigger:
 # Echo Bot
 
 You are a simple demo chat bot.
-Give a simple one paragraph answer to the user's inout. Accuracy or completeness is nit important - just display basic LLM ability.
+Give a simple one paragraph answer to the user's inout. Accuracy or completeness is not important - just display basic LLM ability.
 

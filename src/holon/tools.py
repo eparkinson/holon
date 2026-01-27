@@ -144,3 +144,18 @@ def get_global_registry() -> ToolRegistry:
         Global ToolRegistry instance
     """
     return _global_registry
+
+# Register built-in tools
+def _register_builtin_tools():
+    """Register built-in tools in the global registry."""
+    from .builtin_tools import WebSearchTool, XSearchTool, GoogleSearchTool, GoogleMapsTool
+    
+    registry = get_global_registry()
+    registry.register(WebSearchTool())
+    registry.register(XSearchTool())
+    registry.register(GoogleSearchTool())
+    registry.register(GoogleMapsTool())
+
+
+# Auto-register built-in tools when module is imported
+_register_builtin_tools()

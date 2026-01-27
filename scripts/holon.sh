@@ -11,5 +11,14 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Change to project root
 cd "$PROJECT_ROOT"
 
-# Run holon using uv with the local source
-uv run -m holon.cli "$@"
+# Activate venv if it exists, otherwise look for uv
+if [ -f /tmp/holon-env/bin/activate ]; then
+    source /tmp/holon-env/bin/activate
+    python -m holon.cli "$@"
+elif command -v uv &> /dev/null; then
+    uv run -m holon.cli "$@"
+else
+    echo "Error: Neither venv at /tmp/holon-env nor uv command found"
+    echo "Please install uv or create a venv at /tmp/holon-env"
+    exit 1
+fi

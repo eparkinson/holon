@@ -13,7 +13,8 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 
 from .models import AgentDefinition
-from .tools import ToolRegistry
+from .tools import ToolRegistry, get_global_registry
+from .agent_apis import GrokAgentAPI
 
 
 class Runtime:
@@ -25,12 +26,12 @@ class Runtime:
 
         Args:
             agent: AgentDefinition to execute
-            tool_registry: Optional ToolRegistry for agent tools
+            tool_registry: Optional ToolRegistry for agent tools (defaults to global registry)
         """
         self.agent = agent
         self.console = Console()
         self.conversation_history = []
-        self.tool_registry = tool_registry or ToolRegistry()
+        self.tool_registry = tool_registry or get_global_registry()
 
         # Pre-compute tool definitions
         self.tool_definitions = []
@@ -92,6 +93,104 @@ class Runtime:
                 # Continue the loop instead of crashing
 
     def _get_llm_response(self) -> str:
+        """
+        Get a response from the LLM using native agent APIs when available,
+        otherwise fall back to litellm.
+        Handles tool calls if the agent has tools configured.
+
+        Returns:
+            The assistant's response text
+        """
+        # Check if we should use a native agent API
+        if self.agent.config.model.startswith("xai/grok"):
+            return self._get_grok_response()
+        elif self.agent.config.model.startswith("google/gemini"):
+            return self._get_gemini_response()
+        
+        # Fall back to litellm for other models
+        return self._get_litellm_response()
+    
+    def _get_grok_response(self) -> str:
+        """
+        Get a response from Grok using the native xAI API with agentic tool calling.
+        
+        Uses grok-4-1-fast with the xAI SDK for server-side tool orchestration.
+        The agent autonomously decides which tools to use (x_search, web_search, etc).
+        
+        Returns:
+            The assistant's response text
+        """
+        try:
+            grok = GrokAgentAPI()
+            
+            # Build kwargs with tools if the agent has them configured
+            kwargs = {}
+            if self.tool_definitions:
+                kwargs["tools"] = self.tool_definitions
+            
+            # Get response with tool calling
+            response = grok.chat(
+                messages=self.conversation_history,
+                system_prompt=self.agent.prompt,
+                **kwargs
+            )
+            
+            # Log tool usage if available
+            if "server_side_tool_usage" in response.usage:
+                import sys
+                tool_usage = response.usage.get("server_side_tool_usage", {})
+                if tool_usage:
+                    print(f"[DEBUG] Grok used tools: {tool_usage}", file=sys.stderr)
+            
+            return response.content
+        except Exception as e:
+            raise Exception(
+                f"Failed to get response from Grok: {e}\n"
+                f"Make sure GROK_API_KEY or XAI_API_KEY is set in your environment"
+            )
+    
+    def _get_gemini_response(self) -> str:
+        """
+        Get a response from Gemini using the native Google AI API with built-in tools.
+        
+        Uses Gemini 3 Pro with server-side tool execution for Google Search,
+        Google Maps, Code Execution, and more.
+        
+        Returns:
+            The assistant's response text
+        """
+        try:
+            from .agent_apis import GeminiAgentAPI
+            gemini = GeminiAgentAPI()
+            
+            # Build kwargs with tools if the agent has them configured
+            kwargs = {}
+            if self.tool_definitions:
+                kwargs["tools"] = self.tool_definitions
+            
+            # Get response with tool calling
+            response = gemini.chat(
+                messages=self.conversation_history,
+                system_prompt=self.agent.prompt,
+                **kwargs
+            )
+            
+            # Log tool usage if available
+            if "grounding_metadata" in response.usage:
+                import sys
+                print(f"[DEBUG] Gemini used grounding/tools", file=sys.stderr)
+                if "search_queries_made" in response.usage:
+                    print(f"[DEBUG] Google Search queries were made", file=sys.stderr)
+            
+            return response.content
+        except Exception as e:
+            raise Exception(
+                f"Failed to get response from Gemini: {e}\n"
+                f"Make sure GOOGLE_API_KEY or GEMINI_API_KEY is set in your environment. "
+                f"Get your key from https://aistudio.google.com/apikey"
+            )
+    
+    def _get_litellm_response(self) -> str:
         """
         Get a response from the LLM using litellm.
         Handles tool calls if the agent has tools configured.

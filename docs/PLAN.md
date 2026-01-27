@@ -37,4 +37,43 @@
 
 ## To Do
 
-All planned phases are complete! 🎉
+### Phase 5: Agent Network Orchestration (Multi-Agent Intelligence)
+
+A phase focused on enabling complex, coordinated workflows where multiple higher-order agents work together autonomously. This realizes Holon's core vision: **treating agents as intelligent microservices that collaborate without human intervention**.
+
+- [ ] **Agent-to-Agent Communication**
+  - [ ] Define `upstream`/`downstream` relationships in agent YAML
+  - [ ] Implement message passing protocol between agents
+  - [ ] Create `AgentMessage` dataclass with sender, receiver, content, context
+  - [ ] Update Runtime to route messages between agents
+  - [ ] Add `@agent_receive` hook in agent prompts
+  - **Success**: 2-agent pipeline (researcher → writer) working end-to-end
+
+- [ ] **Multi-Agent Network Orchestration**
+  - [ ] Define agent `type: network` with execution topology
+  - [ ] Support execution modes: sequential, parallel, conditional
+  - [ ] Implement network executor for state and dependency management
+  - [ ] Add input/output mapping between agents
+  - **Success**: 3-agent parallel research network + synthesizer working faster than sequential
+
+- [ ] **Tool Registry & Custom Tool Integration**
+  - [ ] Extend global tool registry to support custom Python functions
+  - [ ] Add external service integrations (databases, APIs, webhooks)
+  - [ ] Implement tool validation and error handling
+  - [ ] Create tool calling loop in Runtime (agent requests tool, you execute)
+  - **Success**: Agent calling custom Python function and using results
+
+- [ ] **Agent State Management** _(Deferred - evaluate need after network orchestration)_
+  - [ ] Leverage existing conversation history in Runtime (already in-memory)
+  - [ ] If needed: Add network-wide shared state for multi-agent coordination
+  - [ ] If needed: Simple persistence (JSON files or SQLite) for cross-session continuity
+  - **Note**: Higher-order agents typically have built-in context/memory. Only implement external storage if agents need to coordinate across separate invocations or exceed token limits.
+  - **Success**: Multi-agent network shares state within a single session; optional persistence added only when proven necessary
+
+- [ ] **Agent Deployment & Containerization (Production-Ready)**
+  - [ ] Create HTTP API server for agent invocation (REST endpoints)
+  - [ ] Add webhook support for external triggers
+  - [ ] Implement environment variable injection for secrets
+  - [ ] Add health checks and monitoring hooks
+  - [ ] Package multi-agent network as single Docker container
+  - **Success**: `docker run holon-agents` starts server; POST to `/agents/{id}` returns responses
