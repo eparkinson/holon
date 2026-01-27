@@ -56,7 +56,17 @@ A phase focused on enabling complex, coordinated workflows where multiple higher
   - [ ] Add input/output mapping between agents
   - **Success**: 3-agent parallel research network + synthesizer working faster than sequential
 
-- [ ] **Tool Registry & Custom Tool Integration**
+- [ ] **Agent Deployment & Containerization (Production-Ready)**
+  - [ ] Create HTTP API server for agent invocation (REST endpoints)
+  - [ ] Add webhook support for external triggers
+  - [ ] Implement environment variable injection for secrets
+  - [ ] Add health checks and monitoring hooks
+  - [ ] Package multi-agent network as single Docker container
+  - **Success**: `docker run holon-agents` starts server; POST to `/agents/{id}` returns responses
+
+  ## Deferred
+
+  - [ ] **Tool Registry & Custom Tool Integration**
   - [ ] Extend global tool registry to support custom Python functions
   - [ ] Add external service integrations (databases, APIs, webhooks)
   - [ ] Implement tool validation and error handling
@@ -70,10 +80,3 @@ A phase focused on enabling complex, coordinated workflows where multiple higher
   - **Note**: Higher-order agents typically have built-in context/memory. Only implement external storage if agents need to coordinate across separate invocations or exceed token limits.
   - **Success**: Multi-agent network shares state within a single session; optional persistence added only when proven necessary
 
-- [ ] **Agent Deployment & Containerization (Production-Ready)**
-  - [ ] Create HTTP API server for agent invocation (REST endpoints)
-  - [ ] Add webhook support for external triggers
-  - [ ] Implement environment variable injection for secrets
-  - [ ] Add health checks and monitoring hooks
-  - [ ] Package multi-agent network as single Docker container
-  - **Success**: `docker run holon-agents` starts server; POST to `/agents/{id}` returns responses
