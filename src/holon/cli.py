@@ -87,6 +87,7 @@ def test(
 
     # Defer imports to improve startup time
     from .env_utils import apply_env_overrides, load_env_from_yaml, validate_api_key
+    from .models import AgentDefinition, NetworkDefinition
     from .parser import Parser
     from .runtime import Runtime
 
@@ -105,9 +106,9 @@ def test(
             console.print(f"[red]Error:[/red] {e}")
             raise typer.Exit(code=1)
 
-    # Parse the agent definition
+    # Parse the definition (agent or network)
     try:
-        agent = Parser.parse_file(file_path)
+        definition = Parser.parse_file(file_path)
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1)
@@ -115,15 +116,25 @@ def test(
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(code=1)
 
-    # Validate that required API keys are available
-    error_message = validate_api_key(agent.config.model, env_overrides)
-    if error_message:
-        console.print(f"[red]Error:[/red] {error_message}")
-        raise typer.Exit(code=1)
+    # Check if it's a network or agent
+    if isinstance(definition, NetworkDefinition):
+        # Run as network
+        from .network_runtime import NetworkRuntime
+        
+        console.print(f"[cyan]Running network:[/cyan] {definition.config.id}")
+        network_runtime = NetworkRuntime(definition, base_path=Path(file_path).parent)
+        network_runtime.run_interactive()
+    else:
+        # Run as agent
+        # Validate that required API keys are available
+        error_message = validate_api_key(definition.config.model, env_overrides)
+        if error_message:
+            console.print(f"[red]Error:[/red] {error_message}")
+            raise typer.Exit(code=1)
 
-    # Run the interactive runtime
-    runtime = Runtime(agent)
-    runtime.run_interactive()
+        # Run the interactive runtime
+        runtime = Runtime(definition)
+        runtime.run_interactive()
 
 
 @app.command()
