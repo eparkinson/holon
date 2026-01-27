@@ -2,7 +2,7 @@
 Pydantic models for agent configuration validation.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, ConfigDict
@@ -43,7 +43,8 @@ class AgentMessage(BaseModel):
         default=None, description="Additional context metadata"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Message timestamp"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Message timestamp"
     )
 
 
