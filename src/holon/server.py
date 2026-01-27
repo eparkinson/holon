@@ -170,7 +170,7 @@ class HolonServer:
             runtime = self.agent_runtimes[agent_id]
             
             # Get or create conversation
-            conv_id = request.conversation_id or f"{agent_id}_{datetime.utcnow().isoformat()}"
+            conv_id = request.conversation_id or f"{agent_id}_{datetime.now(timezone.utc).isoformat()}"
             
             if conv_id not in self.conversations:
                 self.conversations[conv_id] = [
@@ -227,7 +227,7 @@ class HolonServer:
                     detail=f"Error executing network: {str(e)}"
                 )
             
-            exec_id = request.execution_id or f"{network_id}_{datetime.utcnow().isoformat()}"
+            exec_id = request.execution_id or f"{network_id}_{datetime.now(timezone.utc).isoformat()}"
             
             return NetworkResponse(
                 output=result["final_output"],
@@ -257,7 +257,7 @@ class HolonServer:
             except Exception:
                 payload = {"message": "Webhook triggered"}
             
-            # Process in background
+            # Process in background - wrap sync LLM call in async
             async def process_webhook():
                 runtime = self.agent_runtimes[agent_id]
                 message = payload.get("message", "Webhook triggered")
@@ -269,7 +269,8 @@ class HolonServer:
                 ]
                 
                 try:
-                    response = runtime._get_llm_response()
+                    # Run the synchronous LLM call in a thread pool to avoid blocking
+                    response = await asyncio.to_thread(runtime._get_llm_response)
                     # Here you could store the response, send it somewhere, etc.
                     print(f"Webhook response from {agent_id}: {response}")
                 except Exception as e:

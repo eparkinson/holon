@@ -5,7 +5,6 @@ This module provides the NetworkRuntime class that coordinates execution
 of multiple agents according to a network definition.
 """
 
-import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional
