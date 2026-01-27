@@ -101,9 +101,9 @@ Ready to help shape the future of agent orchestration? [Get started with Holon](
 
 ## 📚 Current Status & Usage
 
-**Phase 1 Implementation Complete!** ✅
+**Phase 5 Implementation Complete!** ✅
 
-You can now:
+All core features are now available, including multi-agent network orchestration and production-ready HTTP API server!
 
 ### Install from Source
 
@@ -111,6 +111,9 @@ You can now:
 git clone https://github.com/eparkinson/holon.git
 cd holon
 uv pip install -e .
+
+# For server features:
+uv pip install -e ".[server]"
 ```
 
 ### Test an Agent Locally
@@ -119,32 +122,69 @@ uv pip install -e .
 # Set your API key (e.g., for OpenAI)
 export OPENAI_API_KEY="your-key-here"
 
-# Run the echo bot
-holon test test/samples/01_echo/echo.md
+# Run a single agent interactively
+holon test tests/samples/01_chat/chat.md
 ```
 
 This launches an interactive chat session where you can talk to the agent. The agent's behavior is defined entirely by the markdown file.
 
+### Test a Multi-Agent Network
+
+```bash
+# Run a network of agents working together
+holon test tests/samples/02_collaborators/network.md
+```
+
+This runs a sequential network where the researcher agent gathers information and passes it to the writer agent.
+
+### Run as Production HTTP Server
+
+```bash
+# Start the HTTP API server
+holon serve tests/samples --host 0.0.0.0 --port 8000
+```
+
+This starts a FastAPI server with REST endpoints for all agents and networks in the directory. Access the API docs at http://localhost:8000/docs
+
+**Key endpoints:**
+- `GET /health` - Health check and list of loaded agents/networks
+- `GET /agents` - List all available agents
+- `GET /networks` - List all available networks
+- `POST /agents/{agent_id}/chat` - Chat with a specific agent
+- `POST /networks/{network_id}/execute` - Execute a network
+- `POST /webhook/{agent_id}` - Webhook trigger for agent execution
+
 ### Explore Sample Agents
 
-The repository includes three example agents to demonstrate different capabilities:
+The repository includes example agents to demonstrate different capabilities:
 
-- **`test/samples/01_echo/echo.md`**: A simple echo bot (great for testing)
-- **`test/samples/02_collaborators/`**: Multi-agent collaboration example
-- **`test/samples/03_complex_network/`**: Complex agent network with delegation
+- **`tests/samples/01_chat/chat.md`**: A simple chat bot (great for testing)
+- **`tests/samples/02_collaborators/`**: Multi-agent collaboration with researcher and writer
+- **`tests/samples/02_collaborators/network.md`**: Network definition for sequential orchestration
+- **`tests/samples/03_complex_network/`**: Complex agent network with delegation
+- **`tests/samples/04_xchat/`**: Grok agent with X Search integration
+- **`tests/samples/05_gchat/`**: Gemini agent with Google Search integration
 
 ### Running Tests
 
 ```bash
+# Install test dependencies
 uv pip install pytest
+
+# Run all tests
 uv run pytest tests/ -v
+
+# Run specific test suites
+uv run pytest tests/test_network.py -v  # Network orchestration tests
+uv run pytest tests/test_server.py -v   # HTTP API server tests
 ```
 
 ## 🚀 Roadmap
 
 - ✅ **Phase 1**: Foundation & CLI - Complete!
 - ✅ **Phase 2**: Agent Runtime - Complete!
-- 🚧 **Phase 3**: Containerization - Coming soon
-- 🚧 **Phase 4**: Production examples & documentation
+- ✅ **Phase 3**: Containerization - Complete!
+- ✅ **Phase 4**: Production examples & documentation - Complete!
+- ✅ **Phase 5**: Agent Network Orchestration - Complete!
 
 See [PLAN.md](docs/PLAN.md) for the complete roadmap.
