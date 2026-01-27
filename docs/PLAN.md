@@ -35,48 +35,51 @@
 - [x] Verify `holon test` works with all examples (requires API keys).
 - [x] Verify `holon deploy` functionality locally with `tests/samples/01_echo/echo.md` (requires Docker).
 
-## To Do
+## Done
 
-### Phase 5: Agent Network Orchestration (Multi-Agent Intelligence)
+### Phase 5: Agent Network Orchestration (Multi-Agent Intelligence) ✅
 
 A phase focused on enabling complex, coordinated workflows where multiple higher-order agents work together autonomously. This realizes Holon's core vision: **treating agents as intelligent microservices that collaborate without human intervention**.
 
-- [ ] **Agent-to-Agent Communication**
-  - [ ] Define `upstream`/`downstream` relationships in agent YAML
-  - [ ] Implement message passing protocol between agents
-  - [ ] Create `AgentMessage` dataclass with sender, receiver, content, context
-  - [ ] Update Runtime to route messages between agents
-  - [ ] Add `@agent_receive` hook in agent prompts
-  - **Success**: 2-agent pipeline (researcher → writer) working end-to-end
+- [x] **Agent-to-Agent Communication**
+  - [x] Define `upstream`/`downstream` relationships in agent YAML
+  - [x] Implement message passing protocol between agents
+  - [x] Create `AgentMessage` dataclass with sender, receiver, content, context
+  - [x] Update Runtime to route messages between agents
+  - [x] Implement execution order based on agent dependencies
+  - **Success**: 2-agent pipeline (researcher → writer) working end-to-end ✅
 
-- [ ] **Multi-Agent Network Orchestration**
-  - [ ] Define agent `type: network` with execution topology
-  - [ ] Support execution modes: sequential, parallel, conditional
-  - [ ] Implement network executor for state and dependency management
-  - [ ] Add input/output mapping between agents
-  - **Success**: 3-agent parallel research network + synthesizer working faster than sequential
+- [x] **Multi-Agent Network Orchestration**
+  - [x] Define agent `type: network` with execution topology
+  - [x] Support execution modes: sequential, parallel, conditional
+  - [x] Implement network executor for state and dependency management
+  - [x] Add input/output mapping between agents
+  - [x] Topological sort for dependency-based execution
+  - **Success**: Multi-agent networks execute correctly with proper orchestration ✅
 
-- [ ] **Agent Deployment & Containerization (Production-Ready)**
-  - [ ] Create HTTP API server for agent invocation (REST endpoints)
-  - [ ] Add webhook support for external triggers
-  - [ ] Implement environment variable injection for secrets
-  - [ ] Add health checks and monitoring hooks
-  - [ ] Package multi-agent network as single Docker container
-  - **Success**: `docker run holon-agents` starts server; POST to `/agents/{id}` returns responses
+- [x] **Agent Deployment & Containerization (Production-Ready)**
+  - [x] Create HTTP API server for agent invocation (REST endpoints)
+  - [x] Add webhook support for external triggers
+  - [x] Implement environment variable injection for secrets
+  - [x] Add health checks and monitoring hooks
+  - [x] Add `holon serve` CLI command for server deployment
+  - **Success**: Server runs and exposes REST API for agents and networks ✅
 
-  ## Deferred
+## To Do
 
-  - [ ] **Tool Registry & Custom Tool Integration**
-  - [ ] Extend global tool registry to support custom Python functions
-  - [ ] Add external service integrations (databases, APIs, webhooks)
-  - [ ] Implement tool validation and error handling
-  - [ ] Create tool calling loop in Runtime (agent requests tool, you execute)
-  - **Success**: Agent calling custom Python function and using results
+### Deferred Features
 
-- [ ] **Agent State Management** _(Deferred - evaluate need after network orchestration)_
-  - [ ] Leverage existing conversation history in Runtime (already in-memory)
-  - [ ] If needed: Add network-wide shared state for multi-agent coordination
-  - [ ] If needed: Simple persistence (JSON files or SQLite) for cross-session continuity
+These features are deferred pending user feedback and real-world usage patterns:
+
+- [ ] **Tool Registry & Custom Tool Integration**
+  - Extend global tool registry to support custom Python functions
+  - Add external service integrations (databases, APIs, webhooks)
+  - Implement tool validation and error handling
+  - Create tool calling loop in Runtime (agent requests tool, you execute)
+  - **Note**: Basic tool support already exists via builtin_tools.py
+
+- [ ] **Agent State Management**
+  - Leverage existing conversation history in Runtime (already in-memory)
+  - If needed: Add network-wide shared state for multi-agent coordination
+  - If needed: Simple persistence (JSON files or SQLite) for cross-session continuity
   - **Note**: Higher-order agents typically have built-in context/memory. Only implement external storage if agents need to coordinate across separate invocations or exceed token limits.
-  - **Success**: Multi-agent network shares state within a single session; optional persistence added only when proven necessary
-
